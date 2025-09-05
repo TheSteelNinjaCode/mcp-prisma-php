@@ -1,0 +1,110 @@
+[
+  {
+    "tool": "pphp.component.addPHPXUI",
+    "title": "Add Component (PHPXUI)",
+    "description": "Add one or more PHPXUI components (shadcn-style) such as Dialog, Toast, or Sheet. Prefers local catalogue; auto-installs if missing.",
+    "file": "src/tools/addPHPXUIComponent.ts"
+  },
+  {
+    "tool": "pphp.component.addPPIcon",
+    "title": "Add Component (PPIcons)",
+    "description": "Add one or more icon components from the PPIcons catalogue (lucide-style). Resolves canonical names and ensures icons are available in the project.",
+    "file": "src/tools/addPPIconComponent.ts"
+  },
+  {
+    "tool": "pphp.config.describe",
+    "title": "Describe Prisma PHP project",
+    "description": "Summarizes prisma-php.json and validates common paths/options",
+    "file": "src/tools/describeConfig.ts"
+  },
+  {
+    "tool": "pphp.detectProject",
+    "title": "Detect Prisma PHP Project",
+    "description": "Returns true if prisma-php.json exists at the workspace root",
+    "file": "src/tools/detectProject.ts"
+  },
+  {
+    "tool": "pphp.generateSwaggerDocs",
+    "title": "Generate Swagger Docs",
+    "description": "Runs `npm run create-swagger-docs` in project root — only if swaggerDocs is enabled in prisma-php.json.",
+    "file": "src/tools/generateSwaggerDocs.ts"
+  },
+  {
+    "tool": "pphp.config.get",
+    "title": "Get prisma-php.json",
+    "description": "Returns the raw contents of prisma-php.json from the workspace root",
+    "file": "src/tools/getConfig.ts"
+  },
+  {
+    "tool": "pphp.listComponents",
+    "title": "List PHPXUI Components",
+    "description": "Lists components from ./settings/class-log.json (authoritative list).",
+    "file": "src/tools/listComponents.ts"
+  },
+  {
+    "tool": "pphp.listRoutes",
+    "title": "List Routes",
+    "description": "Lists all routes in the project, including dynamic segments and file paths.",
+    "file": "src/tools/listRoutes.ts"
+  },
+  {
+    "tool": "pphp.prisma.generate",
+    "title": "Prisma ORM generate",
+    "description": "Runs `npx ppo generate` only if prisma is enabled in prisma-php.json (`\"prisma\": true`).",
+    "file": "src/tools/prismaGenerate.ts"
+  },
+  {
+    "tool": "pphp.npm.script",
+    "title": "Run arbitrary npm script",
+    "description": "Runs any npm script from package.json (Windows: opens a terminal).",
+    "file": "src/tools/runNpmScript.ts"
+  },
+  {
+    "tool": "pphp.updateFilterFiles",
+    "title": "Update Filter Files",
+    "description": "Updates filter files in the project, normalizing paths and handling wildcards.",
+    "file": "src/tools/updateFilterFiles.ts"
+  },
+  {
+    "tool": "pphp.project.update",
+    "title": "Update Prisma PHP project",
+    "description": "Launches `npx pp update project`. On Windows opens a new terminal window for interactive prompts.",
+    "file": "src/tools/updateProject.ts"
+  },
+  {
+    "tool": "pphp.prisma.prepare",
+    "title": "Prepare database (Prisma)",
+    "description": "Checks prisma enabled in prisma-php.json, validates DATABASE_URL, syncs schema provider, runs migrate/db push, then ppo generate.",
+    "file": "src/tools/prismaPrepare.ts"
+  },
+  {
+    "tool": "pphp.crud.createGuide",
+    "title": "CRUD Create Guide",
+    "description": "Provides a guide for implementing create operations in Prisma PHP projects.",
+    "file": "src/tools/crudCreateGuide.ts"
+  },
+  {
+    "tool": "pphp.crud.readGuide",
+    "title": "CRUD Read Guide",
+    "description": "Provides a guide for implementing read operations in Prisma PHP projects.",
+    "file": "src/tools/crudReadGuide.ts"
+  },
+  {
+    "tool": "pphp.crud.updateGuide",
+    "title": "CRUD Update Guide",
+    "description": "Provides a guide for implementing update operations in Prisma PHP projects.",
+    "file": "src/tools/crudUpdateGuide.ts"
+  },
+  {
+    "tool": "pphp.crud.deleteGuide",
+    "title": "CRUD Delete Guide",
+    "description": "Provides a guide for implementing delete operations in Prisma PHP projects.",
+    "file": "src/tools/crudDeleteGuide.ts"
+  },
+  {
+    "tool": "pphp.scaffoldDashboard",
+    "title": "Scaffold Dashboard",
+    "description": "Scaffolds a dashboard UI for the Prisma PHP project, including basic navigation and layout.",
+    "file": "src/tools/scaffoldDashboard.ts"
+  }
+]

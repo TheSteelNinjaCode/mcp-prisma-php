@@ -1,0 +1,3 @@
+{
+  "github.copilot.chat.workspaceInstructions": "${workspaceFolder}/copilot-instructions.md"
+}

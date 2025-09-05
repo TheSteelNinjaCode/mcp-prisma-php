@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "prisma-php": {
+      "type": "stdio",
+      "command": "mcp-prisma-php",
+      "args": ["--root", "${workspaceFolder}"]
+    }
+  }
+}
