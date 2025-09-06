@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { ucfirst, lcfirstWord, toPlural, ensureAllowedKeys, buildIncludeLines as _inc, buildSelectLines as _sel, buildOmitLines as _omit, METHOD_ALIASES, } from "../utils/utils.js";
 /**
- * Generic READ scaffolding for Prisma PHP + local Reactivity (UI-agnostic).
- * Auto-switches to front-end-only if prisma is disabled.
+ * READ tool:
+ * Two sections:
+ *   1) backend (Prisma PHP model approach)
+ *   2) frontend (Todo-style list + search)
  */
 const ROOT_KEYS_MAP = {
     findMany: [
@@ -64,8 +66,8 @@ const okAsText = (obj) => ({
 });
 export function registerCrudReadGuide(server, ctx) {
     server.registerTool("pphp.crud.readGuide", {
-        title: "Generate READ pattern (Prisma PHP + local state, generic)",
-        description: "UI-agnostic Prisma PHP READ scaffolding (front-end-only when prisma disabled). <script> goes at bottom.",
+        title: "Generate READ pattern (backend + frontend template, separated)",
+        description: "Outputs two sections: (1) Backend model approach (Prisma PHP) and (2) Frontend-only Todo list + search. Backend is omitted if prisma=false.",
         inputSchema: InputShape,
     }, async (args) => {
         const parsed = InputObject.safeParse(args);
@@ -77,136 +79,117 @@ export function registerCrudReadGuide(server, ctx) {
         const modelProp = lcfirstWord(model);
         const plural = (stateName && stateName.trim()) || toPlural(modelProp);
         const aliases = METHOD_ALIASES(Model);
-        if (!prismaEnabled) {
-            // Front-end only
-            const php = `<?php /* Prisma disabled → READ PHP skipped. Provide data from your API in JS. */ ?>`;
+        // ---------- BACKEND ----------
+        let backend = {
+            disabled: true,
+            message: "Prisma is disabled (prisma=false). Backend snippet omitted.",
+        };
+        if (prismaEnabled) {
+            if (include.length && select.length) {
+                return err("You may not use both `select` and `include` in the same query.");
+            }
+            const wants = [];
+            if (withWhereStub)
+                wants.push("where");
+            if (select.length)
+                wants.push("select");
+            if (include.length || counts.length)
+                wants.push("include");
+            if (omit.length)
+                wants.push("omit");
+            const { bad } = ensureAllowedKeys(ROOT_KEYS_MAP[op], wants);
+            if (bad.length) {
+                return err(`The following keys are not allowed for ${op}(): ${bad.join(", ")}.\nAllowed keys: ${ROOT_KEYS_MAP[op].join(", ")}`);
+            }
+            const bodyLines = [];
+            if (withWhereStub) {
+                bodyLines.push(`    'where' => [`);
+                bodyLines.push(`        // 'name' => ['contains' => $q],`);
+                bodyLines.push(`        // 'isActive' => true,`);
+                bodyLines.push(`    ],`);
+            }
+            if (select.length)
+                bodyLines.push(..._sel(select));
+            if (include.length || counts.length) {
+                const inc = _inc(include, counts);
+                if (inc.length) {
+                    bodyLines.push(`    'include' => [`);
+                    bodyLines.push(...inc);
+                    bodyLines.push(`    ],`);
+                }
+            }
+            if (omit.length)
+                bodyLines.push(..._omit(omit));
+            const php = [
+                "<?php",
+                "use Lib\\Prisma\\Classes\\Prisma;",
+                "",
+                `// --- Prisma PHP READ (${op})`,
+                `$prisma = Prisma::getInstance();`,
+                "",
+                `$${plural} = $prisma->${modelProp}->${op}([`,
+                ...bodyLines,
+                `]);`,
+                "?>",
+            ].join("\n");
+            const displayFields = fields.length
+                ? fields
+                : ["id", "name", "isActive"];
             const html = [
-                "<!-- Generic HTML using <template pp-for> (front-end only) -->",
+                "<!-- Backend • Model approach (Read) -->",
                 `<div class="data-list">`,
                 `  <template pp-for="${itemAlias} in ${plural}">`,
-                `    <article class="data-row">`,
-                ...(fields.length
-                    ? fields.map((f) => `      <div><strong>${f}:</strong> {{ ${itemAlias}.${f} }}</div>`)
-                    : [
-                        `      <!-- add fields to display:`,
-                        `           <div><strong>id:</strong> {{ ${itemAlias}.id }}</div>`,
-                        `           <div><strong>name:</strong> {{ ${itemAlias}.name }}</div>`,
-                        `      -->`,
-                    ]),
+                `    <article class="data-row border rounded p-3 mb-2">`,
+                ...displayFields.map((f) => `      <div><strong>${f}:</strong> {{ ${itemAlias}.${f} }}</div>`),
                 `    </article>`,
                 `  </template>`,
                 `</div>`,
             ].join("\n");
             const js = [
                 "<script>",
-                "// Bottom of page. Load from your REST endpoint or other source.",
-                `const [${plural}, set${Model}s] = pphp.state([]);`,
-                `export async function load${Model}s() {`,
-                `  // const res = await fetch('/api/${modelProp}');`,
-                `  // const data = await res.json();`,
-                `  // set${Model}s(data.items ?? data ?? []);`,
-                `}`,
+                `const [${plural}, set${Model}s] = pphp.state(<?= json_encode($${plural}) ?>);`,
                 "</script>",
             ].join("\n");
-            const notes = [
-                "• Front-end-only mode: fill the list via fetch() in load…().",
-                "• Objects/arrays are reactive directly; no `.value`.",
-            ].join("\n");
-            return okAsText({
-                meta: {
-                    model: modelProp,
-                    op,
-                    pluralState: plural,
-                    itemAlias,
-                    prismaEnabled,
-                },
-                snippets: { php, html, js, notes },
-                hints: {
-                    methodAliases: aliases,
-                    warnings: ["Backend read skipped: prisma=false."],
-                },
-            });
+            backend = { php, html, js };
         }
-        // Prisma-enabled
-        if (include.length && select.length) {
-            return err("You may not use both `select` and `include` in the same query.");
-        }
-        const wants = [];
-        if (withWhereStub)
-            wants.push("where");
-        if (select.length)
-            wants.push("select");
-        if (include.length || counts.length)
-            wants.push("include");
-        if (omit.length)
-            wants.push("omit");
-        const { bad } = ensureAllowedKeys(ROOT_KEYS_MAP[op], wants);
-        if (bad.length) {
-            return err(`The following keys are not allowed for ${op}(): ${bad.join(", ")}.\nAllowed keys: ${ROOT_KEYS_MAP[op].join(", ")}`);
-        }
-        const incBlock = (() => {
-            const inc = _inc(include, counts);
-            return inc.length ? ["    'include' => [", ...inc, "    ],"] : [];
-        })();
-        const php = [
-            "<?php",
-            "use Lib\\Prisma\\Classes\\Prisma;",
-            "",
-            `// --- Prisma PHP READ (${op})`,
-            `$prisma = Prisma::getInstance();`,
-            "",
-            `$${plural} = $prisma->${modelProp}->${op}([`,
-            ...(withWhereStub
-                ? [
-                    "    'where' => [",
-                    "        // 'email' => ['contains' => $q],",
-                    "        // 'isActive' => true,",
-                    "        // 'roles' => ['some' => ['name' => ['contains' => $q]]],",
-                    "    ],",
-                ]
-                : []),
-            ..._sel(select),
-            ...incBlock,
-            ..._omit(omit),
-            `]);`,
-            "?>",
-        ].join("\n");
-        const fieldLines = fields.length
-            ? fields.map((f) => `      <div><strong>${f}:</strong> {{ ${itemAlias}.${f} }}</div>`)
-            : [
-                `      <!-- add fields to display:`,
-                `           <div><strong>id:</strong> {{ ${itemAlias}.id }}</div>`,
-                `           <div><strong>name:</strong> {{ ${itemAlias}.name }}</div>`,
-                `      -->`,
-            ];
-        const html = [
-            "<!-- Generic HTML using <template pp-for> -->",
-            `<div class="data-list">`,
-            `  <template pp-for="${itemAlias} in ${plural}">`,
-            `    <article class="data-row">`,
-            ...fieldLines,
-            `    </article>`,
-            `  </template>`,
+        // ---------- FRONTEND (Todo-style list + search) ----------
+        const feHtml = [
+            `<!-- Read (frontend-only) -->`,
+            `<div class="max-w-md mx-auto mt-8 p-4 bg-white rounded shadow">`,
+            `  <h2 class="text-xl font-bold mb-4">Items</h2>`,
+            `  <input type="text" pp-bind-value="search" oninput="setSearch(this.value)" placeholder="Search…" class="w-full border rounded px-2 py-1 mb-4" />`,
+            `  <div class="flex gap-4 mb-2 text-sm text-gray-700">`,
+            `    <span>Total: {{ items.length }}</span>`,
+            `    <span>Visible: {{ filtered.length }}</span>`,
+            `  </div>`,
+            `  <ul>`,
+            `    <template pp-for="row in filtered">`,
+            `      <li class="flex items-center gap-2 mb-2">`,
+            `        <span class="{{ row.isActive ? 'text-gray-900' : 'text-gray-400 line-through' }}">{{ row.name }}</span>`,
+            `      </li>`,
+            `    </template>`,
+            `  </ul>`,
             `</div>`,
         ].join("\n");
-        const js = [
+        const feJs = [
             "<script>",
-            "// Bottom of page.",
-            `const [${plural}, set${Model}s] = pphp.state(<?= json_encode($${plural}) ?>);`,
-            "const [q, setQ] = pphp.state('');",
-            "const [status, setStatus] = pphp.state('');",
-            "",
-            `export function edit${Model}(row) { /* open dialog, etc. */ }`,
-            `export function remove${Model}(id) { /* call delete, then set${Model}s(...) */ }`,
+            `const [items, setItems] = pphp.state([{ id: crypto.randomUUID?.() || 1, name: "Learn Prisma PHP", isActive: true }]);`,
+            `const [search, setSearch] = pphp.state("");`,
+            `const [filtered, setFiltered] = pphp.state(items.value);`,
+            `pphp.effect(() => {`,
+            `  const q = search.value.trim().toLowerCase();`,
+            `  setFiltered(q ? items.value.filter(r => (r.name ?? '').toLowerCase().includes(q)) : items.value);`,
+            `}, [search, items]);`,
+            `// For API later: async function loadItems() { const res = await fetch('/api/items'); setItems(await res.json()); }`,
             "</script>",
         ].join("\n");
         const notes = [
-            "• Order: PHP → HTML → JS.",
-            "• Arrays/objects are reactive directly (no `.value`).",
-            "• `_count` goes inside `include` as '_count' => ['select' => ['rel' => true]].",
-            `• Filters: ${Array.from(FILTER_OPERATORS).join(", ")}.`,
-            `• Relation ops: ${Array.from(RELATION_OPERATORS).join(", ")}.`,
-        ].join("\n");
+            prismaEnabled
+                ? "Both sections included: backend (Prisma) + frontend reference (Todo-style)."
+                : "Prisma is disabled → backend omitted; use the frontend Todo-style section.",
+            "Frontend templates avoid `.value` in templates; use `.value` in JS when reading/writing state.",
+            `Filter operators (backend): ${Array.from(FILTER_OPERATORS).join(", ")}; relation ops: ${Array.from(RELATION_OPERATORS).join(", ")}.`,
+        ];
         const payload = {
             meta: {
                 model: modelProp,
@@ -215,7 +198,7 @@ export function registerCrudReadGuide(server, ctx) {
                 itemAlias,
                 prismaEnabled,
             },
-            snippets: { php, html, js, notes },
+            snippets: { backend, frontend: { html: feHtml, js: feJs }, notes },
             hints: {
                 allowedRootKeys: Array.from(ROOT_KEYS_MAP[op]),
                 filterOperators: Array.from(FILTER_OPERATORS),

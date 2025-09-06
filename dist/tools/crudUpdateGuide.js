@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { ucfirst, lcfirstWord, toPlural, ensureAllowedKeys, buildIncludeLines, buildSelectLines, buildOmitLines, METHOD_ALIASES, } from "../utils/utils.js";
 /**
- * Generic UPDATE scaffolding.
- * Auto-switches to front-end-only if prisma is disabled.
+ * UPDATE tool:
+ * Two sections:
+ *   1) backend (Prisma PHP model approach)
+ *   2) frontend (Todo-style edit/save/cancel)
  */
 const ROOT_KEYS_MAP = {
     update: ["data", "where", "include", "omit", "select"],
@@ -31,8 +33,8 @@ const okAsText = (obj) => ({
 });
 export function registerCrudUpdateGuide(server, ctx) {
     server.registerTool("pphp.crud.updateGuide", {
-        title: "Generate UPDATE pattern (Prisma PHP + local state, generic)",
-        description: "UI-agnostic Prisma PHP UPDATE scaffolding (front-end-only when prisma disabled). Place <script> at the bottom.",
+        title: "Generate UPDATE pattern (backend + frontend template, separated)",
+        description: "Outputs two sections: (1) Backend model approach (Prisma PHP) and (2) Frontend-only Todo edit pattern. Backend omitted if prisma=false.",
         inputSchema: InputShape,
     }, async (args) => {
         const parsed = InputObject.safeParse(args);
@@ -46,205 +48,211 @@ export function registerCrudUpdateGuide(server, ctx) {
         const fnName = handlerName ||
             (op === "update" ? `update${Model}` : `updateMany${Model}`);
         const aliases = METHOD_ALIASES(Model);
-        if (!prismaEnabled) {
-            const defaultFormObj = [
-                `${whereUniqueKey}: ''`,
-                ...(fields.length
-                    ? fields.map((f) => `${f}: ''`)
-                    : ["name: ''", "email: ''", "isActive: true"]),
-            ].join(", ");
-            const php = `<?php /* Prisma disabled → UPDATE PHP skipped. */ ?>`;
+        // ---------- BACKEND ----------
+        let backend = {
+            disabled: true,
+            message: "Prisma is disabled (prisma=false). Backend snippet omitted.",
+        };
+        if (prismaEnabled) {
+            if (include.length && select.length)
+                return err("You may not use both `select` and `include`.");
+            const wants = ["where", "data"];
+            if (select.length && op === "update")
+                wants.push("select");
+            if ((include.length || counts.length) && op === "update")
+                wants.push("include");
+            if (omit.length && op === "update")
+                wants.push("omit");
+            const { bad } = ensureAllowedKeys(ROOT_KEYS_MAP[op], wants);
+            if (bad.length) {
+                return err(`The following keys are not allowed for ${op}(): ${bad.join(", ")}.\nAllowed keys: ${ROOT_KEYS_MAP[op].join(", ")}`);
+            }
+            const includeLines = buildIncludeLines(include, counts);
+            const selectLines = buildSelectLines(select);
+            const omitLines = buildOmitLines(omit);
+            const backendFields = fields.length
+                ? fields
+                : ["name", "email", "isActive"];
+            const dataMapLines = backendFields.map((f) => `            '${f}' => $data->${f} ?? ${f.toLowerCase().startsWith("is") ? "null" : "null"},`);
+            const php = op === "update"
+                ? [
+                    "<?php",
+                    "use Lib\\Prisma\\Classes\\Prisma;",
+                    "",
+                    `function ${fnName}($data) {`,
+                    "    try {",
+                    "        $prisma = Prisma::getInstance();",
+                    `        $whereVal = $data->${whereUniqueKey} ?? null;`,
+                    `        if ($whereVal === null || $whereVal === '') return ['ok' => false, 'message' => 'Missing unique key: ${whereUniqueKey}.'];`,
+                    `        $row = $prisma->${modelProp}->update([`,
+                    `            'where' => ['${whereUniqueKey}' => $whereVal],`,
+                    "            'data'  => [",
+                    ...dataMapLines,
+                    "            ],",
+                    ...(includeLines.length
+                        ? [
+                            "            'include' => [",
+                            ...includeLines,
+                            "            ],",
+                        ]
+                        : []),
+                    ...(selectLines.length
+                        ? selectLines.map((l) => l.startsWith("        ") ? l : `        ${l}`)
+                        : []),
+                    ...(omitLines.length
+                        ? omitLines.map((l) => l.startsWith("        ") ? l : `        ${l}`)
+                        : []),
+                    "        ]);",
+                    `        return ${returnRow ? "['ok' => true, 'row' => $row]" : "['ok' => true]"};`,
+                    "    } catch (Throwable $e) {",
+                    "        return ['ok' => false, 'message' => ($e->getMessage() ?: 'Update failed.')];",
+                    "    }",
+                    "}",
+                    "?>",
+                ].join("\n")
+                : [
+                    "<?php",
+                    "use Lib\\Prisma\\Classes\\Prisma;",
+                    "",
+                    `function ${fnName}($data) {`,
+                    "    try {",
+                    "        $prisma = Prisma::getInstance();",
+                    "        $where = is_array($data->where ?? null) ? $data->where : [];",
+                    "        $payload = is_array($data->data ?? null) ? $data->data : [];",
+                    "        if (!$payload) return ['ok' => false, 'message' => 'No update data provided.'];",
+                    `        $res = $prisma->${modelProp}->updateMany([ 'where' => $where, 'data' => $payload ]);`,
+                    "        return ['ok' => true, 'count' => ($res->count ?? null)];",
+                    "    } catch (Throwable $e) {",
+                    "        return ['ok' => false, 'message' => ($e->getMessage() ?: 'UpdateMany failed.')];",
+                    "    }",
+                    "}",
+                    "?>",
+                ].join("\n");
             const html = [
-                "<!-- Front-end-only update form; fill `form` then call your API in JS -->",
-                `<form onsubmit="submit${Model}(event)" style="display:grid;gap:8px;max-width:560px">`,
-                `  <label><div>${whereUniqueKey}</div><input value="{{ form.${whereUniqueKey} ?? '' }}" readonly /></label>`,
-                ...(fields.length
-                    ? fields.map((f) => `  <label><div>${f}</div><input value="{{ form.${f} ?? '' }}" oninput="patchForm({ ${f}: this.value })" /></label>`)
-                    : [
-                        `  <label><div>name</div><input value="{{ form.name ?? '' }}" oninput="patchForm({ name: this.value })" /></label>`,
-                        `  <label><div>email</div><input type="email" value="{{ form.email ?? '' }}" oninput="patchForm({ email: this.value })" /></label>`,
-                        `  <label style="display:flex;gap:.5rem;align-items:center"><input type="checkbox" onchange="patchForm({ isActive: !!this.checked })" checked="{{ !!form.isActive }}" /><span>isActive</span></label>`,
-                    ]),
-                `  <div style="display:flex;gap:.5rem;align-items:center">`,
-                `    <button type="submit" disabled="{{ saving }}">{{ saving ? 'Saving…' : 'Save changes' }}</button>`,
-                `    <span class="error" pp-if="Object.keys(errors).length">Check errors</span>`,
+                "<!-- Backend • Model approach (Update) -->",
+                `<form onsubmit="submit${Model}(event)" class="grid gap-3 max-w-md">`,
+                `  <label class="grid gap-1">`,
+                `    <div class="text-sm text-gray-700">${whereUniqueKey}</div>`,
+                `    <input value="{{ form.${whereUniqueKey} ?? '' }}" readonly class="border rounded px-2 py-1 bg-gray-50" />`,
+                `  </label>`,
+                ...backendFields.map((f) => {
+                    const isBool = f.toLowerCase().startsWith("is");
+                    return isBool
+                        ? [
+                            `  <label class="flex items-center gap-2">`,
+                            `    <input type="checkbox" onchange="patchForm({ ${f}: !!this.checked })" checked="{{ !!form.${f} }}" />`,
+                            `    <span>${f}</span>`,
+                            `  </label>`,
+                        ].join("\n")
+                        : [
+                            `  <label class="grid gap-1">`,
+                            `    <div class="text-sm text-gray-700">${f}</div>`,
+                            `    <input value="{{ form.${f} ?? '' }}" oninput="patchForm({ ${f}: this.value })" class="border rounded px-2 py-1" />`,
+                            `  </label>`,
+                        ].join("\n");
+                }),
+                `  <div class="flex gap-2">`,
+                `    <button type="submit" disabled="{{ saving }}" class="bg-green-600 text-white px-3 py-1 rounded">`,
+                `      {{ saving ? 'Saving…' : 'Save changes' }}`,
+                `    </button>`,
+                `    <button type="button" onclick="cancelEdit()" class="bg-gray-300 px-3 py-1 rounded">Cancel</button>`,
                 `  </div>`,
                 `</form>`,
             ].join("\n");
+            const defaultFormObj = [
+                `${whereUniqueKey}: ''`,
+                ...(fields.length
+                    ? fields.map((f) => `${f}: ${f.toLowerCase().startsWith("is") ? "true" : "''"}`)
+                    : ["name: ''", "email: ''", "isActive: true"]),
+            ].join(", ");
             const js = [
                 "<script>",
-                "// Bottom of page (front-end-only).",
                 `const [${plural}, set${Model}s] = pphp.state([]);`,
                 `const [form, setForm] = pphp.state({ ${defaultFormObj} });`,
                 `const [saving, setSaving] = pphp.state(false);`,
                 `const [errors, setErrors] = pphp.state({});`,
-                `export function openEdit${Model}(row) { setErrors({}); setForm({ ${whereUniqueKey}: row?.${whereUniqueKey} ?? '', ${fields.length
-                    ? fields.map((f) => `${f}: row?.${f} ?? ''`).join(", ")
-                    : "name: row?.name ?? '', email: row?.email ?? '', isActive: !!row?.isActive"} }); }`,
+                `export function cancelEdit() { setForm({ ${defaultFormObj} }); }`,
                 `export function patchForm(patch) { setForm(prev => ({ ...prev, ...patch })); }`,
                 `export async function submit${Model}(e) {`,
                 `  e?.preventDefault?.(); setSaving(true); setErrors({});`,
                 `  try {`,
-                `    // const res = await fetch('/api/${modelProp}/${"${form." + whereUniqueKey + "}"}', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(form) });`,
-                `    // const data = await res.json();`,
-                `    // set${Model}s(prev => prev.map(r => r.${whereUniqueKey} === data.row?.${whereUniqueKey} ? data.row : r));`,
+                `    const { response } = await pphp.fetchFunction('${fnName}', form);`,
                 `    setSaving(false);`,
+                `    if (!response?.ok) { if (response?.errors) setErrors(response.errors); return; }`,
+                `    if (response?.row) set${Model}s(prev => prev.map(r => r.${whereUniqueKey} === response.row.${whereUniqueKey} ? response.row : r));`,
                 `  } catch (err) { setSaving(false); alert('Update failed'); }`,
                 `}`,
                 "</script>",
             ].join("\n");
-            const notes = [
-                "• Front-end-only mode: wire to your REST/HTTP endpoint.",
-                "• Objects/arrays are reactive directly; no `.value`.",
-            ].join("\n");
-            return okAsText({
-                meta: {
-                    model: modelProp,
-                    op,
-                    handlerName: fnName,
-                    pluralState: plural,
-                    whereUniqueKey,
-                    prismaEnabled,
-                },
-                snippets: { php, html, js, notes },
-                hints: {
-                    methodAliases: aliases,
-                    warnings: ["Backend update skipped: prisma=false."],
-                },
-            });
+            backend = { php, html, js };
         }
-        // Prisma-enabled
-        if (include.length && select.length)
-            return err("You may not use both `select` and `include`.");
-        const wants = op === "update" ? ["where", "data"] : ["where", "data"];
-        if (select.length && op === "update")
-            wants.push("select");
-        if ((include.length || counts.length) && op === "update")
-            wants.push("include");
-        if (omit.length && op === "update")
-            wants.push("omit");
-        const { bad } = ensureAllowedKeys(ROOT_KEYS_MAP[op], wants);
-        if (bad.length) {
-            return err(`The following keys are not allowed for ${op}(): ${bad.join(", ")}.\nAllowed keys: ${ROOT_KEYS_MAP[op].join(", ")}`);
-        }
-        const includeLines = buildIncludeLines(include, counts);
-        const selectLines = buildSelectLines(select);
-        const omitLines = buildOmitLines(omit);
-        const dataMapLines = (fields.length ? fields : ["name", "email", "isActive"]).map((f) => `            '${f}' => $data->${f} ?? ${f === "isActive" ? "null" : "null"},`);
-        const php = op === "update"
-            ? [
-                "<?php",
-                "use Lib\\Prisma\\Classes\\Prisma;",
-                "// use Lib\\Validator;",
-                "",
-                `function ${fnName}($data) {`,
-                "    try {",
-                "        $prisma = Prisma::getInstance();",
-                `        $whereVal = $data->${whereUniqueKey} ?? null;`,
-                `        if ($whereVal === null || $whereVal === '') return ['ok' => false, 'message' => 'Missing unique key: ${whereUniqueKey}.'];`,
-                `        $row = $prisma->${modelProp}->update([`,
-                `            'where' => ['${whereUniqueKey}' => $whereVal],`,
-                "            'data'  => [",
-                ...dataMapLines,
-                "            ],",
-                ...(includeLines.length
-                    ? [
-                        "            'include' => [",
-                        ...includeLines,
-                        "            ],",
-                    ]
-                    : []),
-                ...(selectLines.length
-                    ? selectLines.map((l) => l.startsWith("        ") ? l : `        ${l}`)
-                    : []),
-                ...(omitLines.length
-                    ? omitLines.map((l) => l.startsWith("        ") ? l : `        ${l}`)
-                    : []),
-                "        ]);",
-                `        return ${returnRow ? "['ok' => true, 'row' => $row]" : "['ok' => true]"};`,
-                "    } catch (Throwable $e) {",
-                "        return ['ok' => false, 'message' => ($e->getMessage() ?: 'Update failed.')];",
-                "    }",
-                "}",
-                "?>",
-            ].join("\n")
-            : [
-                "<?php",
-                "use Lib\\Prisma\\Classes\\Prisma;",
-                "",
-                `function ${fnName}($data) {`,
-                "    try {",
-                "        $prisma = Prisma::getInstance();",
-                "        $where = is_array($data->where ?? null) ? $data->where : [];",
-                "        $payload = is_array($data->data ?? null) ? $data->data : [];",
-                "        if (!$payload) return ['ok' => false, 'message' => 'No update data provided.'];",
-                `        $res = $prisma->${modelProp}->updateMany([ 'where' => $where, 'data' => $payload ]);`,
-                "        return ['ok' => true, 'count' => ($res->count ?? null)];",
-                "    } catch (Throwable $e) {",
-                "        return ['ok' => false, 'message' => ($e->getMessage() ?: 'UpdateMany failed.')];",
-                "    }",
-                "}",
-                "?>",
-            ].join("\n");
-        const html = [
-            "<!-- Plain HTML update form (UI-agnostic). -->",
-            `<form onsubmit="submit${Model}(event)" style="display:grid;gap:8px;max-width:560px">`,
-            `  <label><div>${whereUniqueKey}</div><input value="{{ form.${whereUniqueKey} ?? '' }}" readonly /></label>`,
-            ...(fields.length
-                ? fields.map((f) => `  <label><div>${f}</div><input value="{{ form.${f} ?? '' }}" oninput="patchForm({ ${f}: this.value })" /></label>`)
-                : [
-                    `  <label><div>name</div><input value="{{ form.name ?? '' }}" oninput="patchForm({ name: this.value })" /></label>`,
-                    `  <label><div>email</div><input type="email" value="{{ form.email ?? '' }}" oninput="patchForm({ email: this.value })" /></label>`,
-                    `  <label style="display:flex;gap:.5rem;align-items:center"><input type="checkbox" onchange="patchForm({ isActive: !!this.checked })" checked="{{ !!form.isActive }}" /><span>isActive</span></label>`,
-                ]),
-            `  <div style="display:flex;gap:.5rem;align-items:center">`,
-            `    <button type="submit" disabled="{{ saving }}">{{ saving ? 'Saving…' : 'Save changes' }}</button>`,
-            `    <span class="error" pp-if="Object.keys(errors).length">Check errors</span>`,
-            `  </div>`,
-            `</form>`,
+        // ---------- FRONTEND (Todo-style edit) ----------
+        const feHtml = [
+            `<!-- Update (frontend-only) -->`,
+            `<div class="max-w-md mx-auto mt-8 p-4 bg-white rounded shadow">`,
+            `  <h2 class="text-xl font-bold mb-4">Edit item</h2>`,
+            `  <ul class="mb-4">`,
+            `    <template pp-for="row in items">`,
+            `      <li class="flex items-center gap-2 mb-2">`,
+            `        <span class="flex-1">{{ row.name }}</span>`,
+            `        <button onclick="startEdit(row)" class="text-blue-600 hover:underline">Edit</button>`,
+            `      </li>`,
+            `    </template>`,
+            `  </ul>`,
+            `  <form pp-if="editingId" onsubmit="saveEdit()" class="grid gap-3">`,
+            `    <label class="grid gap-1">`,
+            `      <div class="text-sm text-gray-700">id</div>`,
+            `      <input pp-bind-value="edit.id" readonly class="border rounded px-2 py-1 bg-gray-50" />`,
+            `    </label>`,
+            `    <label class="grid gap-1">`,
+            `      <div class="text-sm text-gray-700">name</div>`,
+            `      <input pp-bind-value="edit.name" oninput="setEdit({ ...edit.value, name: this.value })" class="border rounded px-2 py-1" />`,
+            `    </label>`,
+            `    <label class="inline-flex items-center gap-2">`,
+            `      <input type="checkbox" pp-bind-checked="edit.isActive" onchange="setEdit({ ...edit.value, isActive: !!this.checked })" />`,
+            `      <span class="text-sm">isActive</span>`,
+            `    </label>`,
+            `    <div class="flex gap-2">`,
+            `      <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded">Save</button>`,
+            `      <button type="button" onclick="cancelEdit()" class="bg-gray-300 px-3 py-1 rounded">Cancel</button>`,
+            `    </div>`,
+            `  </form>`,
+            `</div>`,
         ].join("\n");
-        const defaultFormObj = [
-            `${whereUniqueKey}: ''`,
-            ...(fields.length
-                ? fields.map((f) => `${f}: ''`)
-                : ["name: ''", "email: ''", "isActive: true"]),
-        ].join(", ");
-        const js = [
+        const feJs = [
             "<script>",
-            "// Bottom of page.",
-            `const [${plural}, set${Model}s] = pphp.state([]);`,
-            `const [form, setForm] = pphp.state({ ${defaultFormObj} });`,
-            `const [saving, setSaving] = pphp.state(false);`,
-            `const [errors, setErrors] = pphp.state({});`,
-            `export function openEdit${Model}(row) { setErrors({}); setForm({ ${whereUniqueKey}: row?.${whereUniqueKey} ?? '', ${fields.length
-                ? fields.map((f) => `${f}: row?.${f} ?? ''`).join(", ")
-                : "name: row?.name ?? '', email: row?.email ?? '', isActive: !!row?.isActive"} }); }`,
-            `export function patchForm(patch) { setForm(prev => ({ ...prev, ...patch })); }`,
-            `export async function submit${Model}(e) {`,
-            `  e?.preventDefault?.(); setSaving(true); setErrors({});`,
-            `  try {`,
-            `    const { response } = await pphp.fetchFunction('${fnName}', form);`,
-            `    setSaving(false);`,
-            `    if (!response?.ok) { if (response?.errors) setErrors(response.errors); return; }`,
-            `    if (response?.row) set${Model}s(prev => prev.map(r => r.${whereUniqueKey} === response.row.${whereUniqueKey} ? response.row : r));`,
-            `  } catch (err) { setSaving(false); alert('Update failed'); }`,
+            `const [items, setItems] = pphp.state([{ id: crypto.randomUUID?.() || 1, name: "Sample", isActive: true }]);`,
+            `const [editingId, setEditingId] = pphp.state("");`,
+            `const [edit, setEdit] = pphp.state({ id: "", name: "", isActive: true });`,
+            `export function startEdit(row) {`,
+            `  setEditingId(String(row?.id ?? ""));`,
+            `  setEdit({ id: row?.id ?? "", name: row?.name ?? "", isActive: !!row?.isActive });`,
+            `}`,
+            `export function cancelEdit() { setEditingId(""); setEdit({ id: "", name: "", isActive: true }); }`,
+            `export function saveEdit() {`,
+            `  if (!editingId.value) return;`,
+            `  setItems(items.value.map(r => String(r.id) === String(edit.value.id) ? { ...r, ...edit.value } : r));`,
+            `  cancelEdit();`,
+            `  // For API later: PUT /api/items/:id then reconcile list`,
             `}`,
             "</script>",
         ].join("\n");
         const notes = [
-            "• Order: PHP → HTML → JS.",
-            "• Objects/arrays are reactive directly (no `.value`).",
-            "• update(): needs unique `where`; updateMany(): returns count only.",
-        ].join("\n");
+            prismaEnabled
+                ? "Both sections included: backend (Prisma) + frontend reference (Todo-style)."
+                : "Prisma is disabled → backend omitted; use the frontend Todo-style section.",
+            "Frontend templates avoid `.value` in templates; use `.value` in JS when reading/writing state.",
+            "updateMany(): returns only { count } (no rows).",
+        ];
         const hints = {
             allowedRootKeys: Array.from(ROOT_KEYS_MAP[op]),
             methodAliases: aliases,
             warnings: [
                 "Do not mix `select` and `include`.",
-                "updateMany() does not return rows.",
+                "update(): requires unique 'where' key.",
             ],
         };
-        return okAsText({
+        const payload = {
             meta: {
                 model: modelProp,
                 op,
@@ -253,9 +261,10 @@ export function registerCrudUpdateGuide(server, ctx) {
                 whereUniqueKey,
                 prismaEnabled,
             },
-            snippets: { php, html, js, notes },
+            snippets: { backend, frontend: { html: feHtml, js: feJs }, notes },
             hints,
-        });
+        };
+        return okAsText(payload);
     });
 }
 //# sourceMappingURL=crudUpdateGuide.js.map
