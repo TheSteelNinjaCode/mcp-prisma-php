@@ -23,6 +23,7 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 
 ### Critical gotchas (front‑loaded)
 
+- **Route creation**: Create **only `index.php`** unless a layout is explicitly requested.
 - **Keys**: Never key by index in `pp-for` — use a stable key like `item.id` (use `crypto.randomUUID()` for client‑side items).
 - **Select values**: DOM `<option>` values are **strings** — compare with `roleId === String(role.id)`.
 - **XML attrs**: Boolean attributes need values (`disabled="true"`), not bare `disabled`.
@@ -43,6 +44,7 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 
 **Decision helper (reactive vs CRUD/server):**
 
+- **Single route creation** → `app/X/index.php` only (no layout).
 - **Render‑only / local state** → stay client‑reactive, no server calls.
 - **Needs DB / persistence / server validation** → use MCP **CRUD guides** to scaffold server flow. Only create `route.php` when `backendOnly: true` or explicitly requested. Use `pphp.prisma.prepare` before ORM actions if needed.
 
@@ -73,14 +75,36 @@ $data = ...;
 </script>
 ```
 
-### 2.2 Route conventions
+### 2.2 Route conventions (enhanced — prevent over‑scaffolding)
 
-- A folder is a **segment**:
-  - `app/dashboard/index.php` → route `/dashboard`
-  - `app/dashboard/layout.php` → **layout for that segment** (not a route)
-  - `app/dashboard/users/index.php` → route `/dashboard/users`
-- Create `layout.php` **only** when you need shared UI for a segment.
-- Backend handlers `route.php` are created **only** if `backendOnly: true` or explicitly requested.
+**Single route creation (default):**
+
+- When the user says “create a route named X” → create **ONLY** `app/X/index.php`.
+- **Do NOT** create `layout.php` unless explicitly requested.
+
+**A folder is a segment:**
+
+- `app/dashboard/index.php` → route `/dashboard`
+- `app/dashboard/users/index.php` → route `/dashboard/users`
+
+**Layout creation rules (strict):**
+
+- **Only create `layout.php` when:**
+  - The user explicitly requests “create a layout for X”
+  - The user asks to “scaffold” or “generate dashboard/admin area”
+  - The user mentions “shared UI” or “common components” for a segment
+- **Never create `layout.php` by default** when creating individual routes.
+
+**Examples:**
+
+```markdown
+✅ "Create a route named todo" → `app/todo/index.php` only
+✅ "Create todo route with layout" → `app/todo/index.php` + `app/todo/layout.php`
+✅ "Scaffold dashboard area" → may include layouts
+❌ Auto‑creating layout.php without explicit request
+```
+
+**Backend handlers `route.php`** are created **only** if `backendOnly: true` or explicitly requested.
 
 ### 2.3 Verify routes
 
