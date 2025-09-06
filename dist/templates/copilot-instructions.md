@@ -21,12 +21,15 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 
 `{{ user.name }}` · `pp-if="open"` · `pp-for="item in items"` · `pp-bind-style="expr"`
 
-> ⚠️ **Critical gotchas:**  
-> • Never key by index in `pp-for` — use a stable key like `item.id`.  
-> • DOM `<option>` values are strings — compare with `roleId === String(role.id)`.  
-> • In XML/XHTML, boolean attrs need values (`disabled="true"`), not bare `disabled`.
+### Critical gotchas (front‑loaded)
 
-When answers depend on workspace state, **show the MCP outputs you used** (short).
+- **Keys**: Never key by index in `pp-for` — use a stable key like `item.id` (use `crypto.randomUUID()` for client‑side items).
+- **Select values**: DOM `<option>` values are **strings** — compare with `roleId === String(role.id)`.
+- **XML attrs**: Boolean attributes need values (`disabled="true"`), not bare `disabled`.
+- **.value usage**: Use `.value` for **operations** (`text.value.trim()`, `todos.value.filter()`, `{...form.value}`); direct properties don’t (`user.name`).
+- **Styling**: If Tailwind enabled, prefer **classes** over `pp-bind-style`. If disabled, use `pp-bind-style` with **CSS strings**.
+
+> When answers depend on workspace state, **show the MCP outputs you used** (short).
 
 ---
 
@@ -52,7 +55,7 @@ Helpful lookups: `pphp.listRoutes`, `pphp.listComponents`. Database helper: `pph
 ### 2.1 Page file order & XML rules
 
 - **File order:** PHP (imports + server data) → HTML → **one `<script>` at the bottom**.
-- **Attributes (XML/XHTML):** every attribute **must have an explicit value** — e.g. `readonly="true"`, `disabled="true"`, `selected="true"` (avoid bare boolean attrs).
+- **Attributes (XML/XHTML):** every attribute **must have an explicit value** — e.g. `readonly="true"`, `disabled="true"`, `selected="true"`.
 
 ```php
 <?php
@@ -66,7 +69,7 @@ $data = ...;
 
 <!-- JS last -->
 <script>
-  // reactive state, handlers, effects
+  // reactive state, handlers, effects (export functions used in markup)
 </script>
 ```
 
@@ -85,7 +88,7 @@ After creating folders/files, run `pphp.listRoutes` and ensure each route folder
 
 ### 2.4 Architecture patterns (reactive vs CRUD)
 
-- **Reactive‑only page**: read data via PHP at top, render, and manage UI with client state. No custom fetches.
+- **Reactive‑only page**: read data via PHP at top, render, and manage UI with client state. **No custom fetches.**
 - **CRUD flow**: use MCP **CRUD guides** to generate/guide server endpoints and client hooks:
   - `pphp.crud.createGuide` / `readGuide` / `updateGuide` / `deleteGuide`
   - Prefer generated patterns over ad‑hoc `fetch`; only use `route.php` when permitted by config/request.
@@ -109,16 +112,61 @@ After creating folders/files, run `pphp.listRoutes` and ensure each route folder
 </script>
 ```
 
-### 3.2 `.value` policy (with examples)
+### 3.2 `.value` policy (**AI frequently gets this wrong**)
 
-- **Use `.value` for primitives** (string/number/boolean): `count.value`, `open.value`.
-- **Objects/arrays are reactive directly** for property access (`user.name`, `todo.items.length`).
-- Use `.value` on objects/arrays **only when a plain snapshot is required**:
-  - **Spread/merge**: `const payload = { ...userForm.value, ...extra };`
-  - **Serialize**: `JSON.stringify(userForm.value)`
-  - **Structural compare**: `deepEqual(prevUser, user.value)`
-  - **Cross‑boundary** (send via `fetch`, events): pass `userForm.value`
-- **Do not** use `.value` for normal property reads: `userForm.name` ✅
+**Critical rule**: `.value` is required in more cases than property access.
+
+**Always use `.value` for:**
+
+- **Primitives in expressions**: `count.value + 1`, `text.value.trim()`, `!isOpen.value`
+- **Array/object operations**: `todos.value.filter()`, `users.value.length`, `{...form.value}`
+- **Comparisons with primitives**: `status.value === 'loading'`
+- **Function parameters**: `setText(input.value)`, `fetch('/api', data.value)`
+
+**Direct property access (no `.value`):**
+
+- **Object properties**: `user.name`, `todo.text`, `form.email`
+- **Array items**: `todos[0].done`, `items.length` _(if items is not reactive)_
+
+**Examples (correct vs wrong):**
+
+✅ **Correct**
+
+```js
+// Primitives need .value
+if (!newTodo.value.trim()) return;
+setCount(count.value + 1);
+
+// Array operations need .value
+setTodos([...todos.value, newItem]);
+setTodos(todos.value.filter((t) => t.id !== id));
+
+// Object snapshots need .value
+const payload = { ...userForm.value, extra: true };
+```
+
+❌ **Wrong**
+
+```js
+// Missing .value on primitives
+if (!newTodo.trim()) return;        // newTodo is a function
+setCount(count + 1);                // count is a function
+
+// Missing .value on array operations
+setTodos([...todos, newItem]);
+setTodos(todos.filter(t => ...));
+
+// Missing .value on object operations
+const payload = {...userForm, extra};
+```
+
+**Decision flowchart:**
+
+1. Reading a specific property? (`user.name`) → **No `.value`**
+2. Using the whole value? (`todos.filter()`) → **Use `.value`**
+3. Primitive in expression? (`count + 1`) → **Use `.value`**
+4. Passing to function? (`setText(input)`) → **Use `.value`**
+5. Spreading/merging? (`{...form}`) → **Use `.value`**
 
 ### 3.3 Selects inside `pp-for` (type coercion)
 
@@ -147,6 +195,7 @@ DOM option values are strings. Normalize ids for reliable comparisons.
 pphp.effect(() => {
   /* on deps change */
 }, [dep]);
+
 setTodos([...todos, next]); // arrays
 setUser({ ...user, name: "New" }); // objects
 ```
@@ -193,19 +242,81 @@ Any function called from markup **must be exported** from the bottom `<script>`.
 
 ---
 
-## 5) Styling & UI
+## 5) Styling & UI (enhanced)
 
-- **Tailwind toggle (config‑driven):**
-  - `tailwindcss: true` → author with **Tailwind v4** utilities.
-  - Otherwise → **no Tailwind**; use project CSS classes or inline styles.
-- **Dynamic styles:** prefer classes; when needed, use `pp-bind-style="expr"`.
-- **Attribute merging:** use `pp-bind-spread` when many props/events come from an object.
+### 5.1 Tailwind vs Style Decision (**AI gets this wrong**)
+
+**Check config first**: Read `tailwindcss` flag to determine approach.
+
+**When `tailwindcss: true` (Tailwind enabled):** Prefer **class binding** over `pp-bind-style`.
+
+```html
+<!-- ✅ Use Tailwind classes -->
+<span
+  class="text-lg {{ todo.done ? 'line-through text-gray-400' : 'text-gray-900' }}"
+>
+  {{ todo.text }}
+</span>
+
+<!-- ❌ Avoid style when Tailwind available -->
+<span pp-bind-style="todo.done ? 'text-decoration: line-through;' : ''"></span>
+```
+
+**When `tailwindcss: false` or missing:** Use `pp-bind-style` with **CSS string syntax**.
+
+```html
+<!-- ✅ CSS string syntax -->
+<span
+  pp-bind-style="todo.done ? 'text-decoration: line-through; color: #9ca3af;' : ''"
+>
+  {{ todo.text }}
+</span>
+
+<!-- ❌ Wrong: object syntax -->
+<span
+  pp-bind-style="{ textDecoration: todo.done ? 'line-through' : 'none' }"
+></span>
+```
+
+### 5.2 Style Syntax Rules
+
+When `pp-bind-style` is needed:
+
+- Use **CSS string** format: `'property: value; property2: value2;'`
+- **Not** JavaScript object format: `{ property: value }`
+- End with semicolons when multiple properties are set
+
+**Examples:**
+
+```html
+<!-- ✅ CSS string -->
+pp-bind-style="isActive ? 'background-color: blue; color: white;' :
+'background-color: gray;'"
+<!-- ❌ Object -->
+pp-bind-style="{ backgroundColor: isActive ? 'blue' : 'gray', color: 'white' }"
+```
+
+### 5.3 Styling decision flow
+
+1. **Check config**: `tailwindcss: true`?
+2. **Yes** → Use **Tailwind class** binding
+3. **No** → Use **`pp-bind-style`** with CSS strings
+4. **Attribute merging**: use **`pp-bind-spread`** when many props/events come from an object
 
 ---
 
 ## 6) Server communication patterns & anti‑patterns
 
 **Do:** Use MCP **CRUD guides** for server work; create `route.php` only when allowed; leverage Prisma via tools when enabled.
+
+**Don’t:**
+
+- Don’t write ad‑hoc `fetch`/XHR to arbitrary URLs; follow the **CRUD guide** patterns.
+- Don’t assume Tailwind exists; **read config first**.
+- Don’t emit `<html>/<head>/<body>`; root layout handles that.
+- Don’t forget to **export** handlers called from markup.
+
+**Useful APIs:**
 
 - **Redirects & params:** `use Lib\Request;` then `Request::redirect('/path')`, `Request::$dynamicParams`, `Request::$params`.
 - **Element refs:** `pp-ref="key"` then `pphp.ref('key'[, index])` for imperative focus/measure/scroll.
