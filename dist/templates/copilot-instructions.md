@@ -24,6 +24,7 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 ### Critical gotchas (front‑loaded)
 
 - **Route creation**: Create **only `index.php`** unless a layout is explicitly requested.
+- **Template expressions**: **Never** use `.value` in `{{ }}` — framework handles reactivity
 - **Template usage**: `<template>` **only** for `pp-for` loops; use real elements for `pp-if`.
 - **No computed**: `pphp.computed` **does not exist** — derive with `pphp.effect`.
 - **Keys**: Never key by index in `pp-for` — use a stable key like `item.id` (use `crypto.randomUUID()` for client‑side items).
@@ -140,59 +141,76 @@ After creating folders/files, run `pphp.listRoutes` and ensure each route folder
 
 ### 3.2 `.value` policy (**AI frequently gets this wrong**)
 
-**Critical rule**: `.value` is required in more cases than property access.
+### 3.2 `.value` policy (**AI frequently gets this wrong**)
+
+**Critical separation**: **HTML templates** vs **JavaScript**.
+
+#### **HTML Template Expressions: NEVER use `.value`**
+
+Templates automatically handle reactive access.
+
+```html
+<!-- ✅ Correct: No .value in templates -->
+{{ user.name }} {{ todos.length }} {{ todos.filter(t => t.done).length }} {{
+count + 1 }} {{ status === 'loading' }}
+
+<!-- ❌ Wrong: .value in templates -->
+{{ user.value.name }}
+<!-- ❌ Never -->
+{{ todos.value.length }}
+<!-- ❌ Never -->
+{{ count.value + 1 }}
+<!-- ❌ Never -->
+```
+
+#### **JavaScript `<script>`: Use `.value` for operations**
 
 **Always use `.value` for:**
 
 - **Primitives in expressions**: `count.value + 1`, `text.value.trim()`, `!isOpen.value`
 - **Array/object operations**: `todos.value.filter()`, `users.value.length`, `{...form.value}`
 - **Comparisons with primitives**: `status.value === 'loading'`
-- **Function parameters**: `setText(input.value)`, `fetch('/api', data.value)`
+- **Function parameters**: `setText(input.value)`
 
 **Direct property access (no `.value`):**
 
 - **Object properties**: `user.name`, `todo.text`, `form.email`
-- **Array items**: `todos[0].done`, `items.length` _(if items is not reactive)_
 
-**Examples (correct vs wrong):**
+**Memory aid**
+
+- **HTML templates** (`{{ }}`): framework handles reactivity → **No `.value`**
+- **JavaScript operations**: manual reactive access → **Use `.value`**
+
+**Examples (correct vs wrong)**
 
 ✅ **Correct**
 
 ```js
-// Primitives need .value
 if (!newTodo.value.trim()) return;
 setCount(count.value + 1);
-
-// Array operations need .value
 setTodos([...todos.value, newItem]);
 setTodos(todos.value.filter((t) => t.id !== id));
-
-// Object snapshots need .value
 const payload = { ...userForm.value, extra: true };
 ```
 
 ❌ **Wrong**
 
 ```js
-// Missing .value on primitives
 if (!newTodo.trim()) return;        // newTodo is a function
 setCount(count + 1);                // count is a function
-
-// Missing .value on array operations
-setTodos([...todos, newItem]);
-setTodos(todos.filter(t => ...));
-
-// Missing .value on object operations
-const payload = {...userForm, extra};
+setTodos([...todos, newItem]);      // todos is a function
+setTodos(todos.filter(t => ...));   // todos is a function
+const payload = { ...userForm, extra }; // userForm is a function
 ```
 
-**Decision flowchart:**
+**Usage Rules Summary**
 
-1. Reading a specific property? (`user.name`) → **No `.value`**
-2. Using the whole value? (`todos.filter()`) → **Use `.value`**
-3. Primitive in expression? (`count + 1`) → **Use `.value`**
-4. Passing to function? (`setText(input)`) → **Use `.value`**
-5. Spreading/merging? (`{...form}`) → **Use `.value`**
+| Context            | Rule          | Example                |
+| ------------------ | ------------- | ---------------------- |
+| HTML Templates     | Never .value  | `{{ todos.length }}`   |
+| JS Operations      | Use .value    | `todos.value.filter()` |
+| JS Property Access | No .value     | `user.name`            |
+| JS Primitives      | Always .value | `count.value + 1`      |
 
 ### 3.3 Selects inside `pp-for` (type coercion)
 
