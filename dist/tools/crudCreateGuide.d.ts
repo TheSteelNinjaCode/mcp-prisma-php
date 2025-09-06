@@ -1,4 +1,4 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Ctx } from "../types.js";
-export declare function registerCrudCreateGuide(server: McpServer, _ctx: Ctx): void;
+export declare function registerCrudCreateGuide(server: McpServer, ctx: Ctx): void;
 //# sourceMappingURL=crudCreateGuide.d.ts.map

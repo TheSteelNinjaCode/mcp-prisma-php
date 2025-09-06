@@ -1,12 +1,8 @@
 import { z } from "zod";
+import { ucfirst, lcfirstWord, toPlural, ensureAllowedKeys, buildIncludeLines as _inc, buildSelectLines as _sel, buildOmitLines as _omit, METHOD_ALIASES, } from "../utils/utils.js";
 /**
  * Generic READ scaffolding for Prisma PHP + local Reactivity (UI-agnostic).
- * Returns TEXT (pretty JSON):
- * {
- *   meta: { model, op, pluralState, itemAlias },
- *   snippets: { php, html, js, notes },
- *   hints: { allowedRootKeys, filterOperators, relationOperators, methodAliases, warnings }
- * }
+ * Auto-switches to front-end-only if prisma is disabled.
  */
 const ROOT_KEYS_MAP = {
     findMany: [
@@ -46,85 +42,8 @@ const FILTER_OPERATORS = [
     "not",
 ];
 const RELATION_OPERATORS = ["every", "none", "some"];
-/** Alternative method names seen in codegen setups */
-const METHOD_ALIASES = (modelPascal) => ({
-    aggregate: `aggregate${modelPascal}`,
-    createMany: `createMany${modelPascal}`,
-    create: `create${modelPascal}`,
-    deleteMany: `deleteMany${modelPascal}`,
-    delete: `delete${modelPascal}`,
-    findFirst: `findFirst${modelPascal}`,
-    findFirstOrThrow: `findFirst${modelPascal}OrThrow`,
-    findMany: `findMany${modelPascal}`,
-    findUnique: `findUnique${modelPascal}`,
-    findUniqueOrThrow: `findUnique${modelPascal}OrThrow`,
-    groupBy: `groupBy${modelPascal}`,
-    updateMany: `updateMany${modelPascal}`,
-    update: `update${modelPascal}`,
-    upsert: `upsert${modelPascal}`,
-});
-function ucfirst(s) {
-    if (typeof s === "string" && s.length > 0) {
-        return (s?.[0]?.toUpperCase() ?? "") + s.slice(1);
-    }
-    return s ?? "";
-}
-function toPlural(word) {
-    if (!word)
-        return word;
-    const lower = word.toLowerCase();
-    if (lower.endsWith("s"))
-        return lower;
-    if (lower.endsWith("y"))
-        return lower.slice(0, -1) + "ies";
-    return lower + "s";
-}
-function lcfirstWord(s) {
-    if (!s)
-        return s ?? "";
-    return (s?.[0]?.toLowerCase() ?? "") + s.slice(1);
-}
-function buildIncludeBlock(include, counts) {
-    const lines = [];
-    if (Array.isArray(include) && include.length) {
-        for (const r of include)
-            lines.push(`        '${r}' => true,`);
-    }
-    if (Array.isArray(counts) && counts.length) {
-        lines.push(`        '_count' => [`);
-        lines.push(`            'select' => [`);
-        for (const c of counts)
-            lines.push(`                '${c}' => true,`);
-        lines.push(`            ]`);
-        lines.push(`        ],`);
-    }
-    return lines;
-}
-function buildSelectBlock(select) {
-    if (!Array.isArray(select) || !select.length)
-        return [];
-    return [
-        `    'select' => [`,
-        ...select.map((s) => `        '${s}' => true,`),
-        `    ],`,
-    ];
-}
-function buildOmitBlock(omit) {
-    if (!Array.isArray(omit) || !omit.length)
-        return [];
-    return [
-        `    'omit' => [`,
-        ...omit.map((o) => `        '${o}' => true,`),
-        `    ],`,
-    ];
-}
-function ensureAllowedKeys(op, wants) {
-    const allowed = new Set(ROOT_KEYS_MAP[op]);
-    const bad = wants.filter((k) => !allowed.has(k));
-    return { allowed, bad };
-}
 const InputShape = {
-    model: z.string().min(1), // any case; we'll lowerCamel on $prisma access
+    model: z.string().min(1),
     op: z.enum(["findMany", "findFirst", "findUnique"]).default("findMany"),
     include: z.array(z.string()).optional(),
     counts: z.array(z.string()).optional(),
@@ -143,57 +62,92 @@ const err = (text) => ({
 const okAsText = (obj) => ({
     content: [{ type: "text", text: JSON.stringify(obj, null, 2) }],
 });
-export function registerCrudReadGuide(server, _ctx) {
+export function registerCrudReadGuide(server, ctx) {
     server.registerTool("pphp.crud.readGuide", {
         title: "Generate READ pattern (Prisma PHP + local state, generic)",
-        description: "UI-agnostic Prisma PHP READ scaffolding: PHP query + plain HTML pp-for + JS (state). Place <script> at bottom.",
+        description: "UI-agnostic Prisma PHP READ scaffolding (front-end-only when prisma disabled). <script> goes at bottom.",
         inputSchema: InputShape,
     }, async (args) => {
         const parsed = InputObject.safeParse(args);
         if (!parsed.success)
             return err(`Invalid input: ${parsed.error.message}`);
+        const prismaEnabled = ctx.CONFIG?.prisma === true;
         const { model, op = "findMany", include = [], counts = [], select = [], omit = [], withWhereStub = false, stateName, itemAlias = "row", fields = [], } = parsed.data;
+        const Model = ucfirst(model);
+        const modelProp = lcfirstWord(model);
+        const plural = (stateName && stateName.trim()) || toPlural(modelProp);
+        const aliases = METHOD_ALIASES(Model);
+        if (!prismaEnabled) {
+            // Front-end only
+            const php = `<?php /* Prisma disabled → READ PHP skipped. Provide data from your API in JS. */ ?>`;
+            const html = [
+                "<!-- Generic HTML using <template pp-for> (front-end only) -->",
+                `<div class="data-list">`,
+                `  <template pp-for="${itemAlias} in ${plural}">`,
+                `    <article class="data-row">`,
+                ...(fields.length
+                    ? fields.map((f) => `      <div><strong>${f}:</strong> {{ ${itemAlias}.${f} }}</div>`)
+                    : [
+                        `      <!-- add fields to display:`,
+                        `           <div><strong>id:</strong> {{ ${itemAlias}.id }}</div>`,
+                        `           <div><strong>name:</strong> {{ ${itemAlias}.name }}</div>`,
+                        `      -->`,
+                    ]),
+                `    </article>`,
+                `  </template>`,
+                `</div>`,
+            ].join("\n");
+            const js = [
+                "<script>",
+                "// Bottom of page. Load from your REST endpoint or other source.",
+                `const [${plural}, set${Model}s] = pphp.state([]);`,
+                `export async function load${Model}s() {`,
+                `  // const res = await fetch('/api/${modelProp}');`,
+                `  // const data = await res.json();`,
+                `  // set${Model}s(data.items ?? data ?? []);`,
+                `}`,
+                "</script>",
+            ].join("\n");
+            const notes = [
+                "• Front-end-only mode: fill the list via fetch() in load…().",
+                "• Objects/arrays are reactive directly; no `.value`.",
+            ].join("\n");
+            return okAsText({
+                meta: {
+                    model: modelProp,
+                    op,
+                    pluralState: plural,
+                    itemAlias,
+                    prismaEnabled,
+                },
+                snippets: { php, html, js, notes },
+                hints: {
+                    methodAliases: aliases,
+                    warnings: ["Backend read skipped: prisma=false."],
+                },
+            });
+        }
+        // Prisma-enabled
         if (include.length && select.length) {
             return err("You may not use both `select` and `include` in the same query.");
         }
-        const wantsKeys = [];
+        const wants = [];
         if (withWhereStub)
-            wantsKeys.push("where");
+            wants.push("where");
         if (select.length)
-            wantsKeys.push("select");
+            wants.push("select");
         if (include.length || counts.length)
-            wantsKeys.push("include");
+            wants.push("include");
         if (omit.length)
-            wantsKeys.push("omit");
-        const { bad } = ensureAllowedKeys(op, wantsKeys);
+            wants.push("omit");
+        const { bad } = ensureAllowedKeys(ROOT_KEYS_MAP[op], wants);
         if (bad.length) {
-            return err(`The following keys are not allowed for ${op}(): ${bad.join(", ")}.\n` + `Allowed keys: ${ROOT_KEYS_MAP[op].join(", ")}`);
+            return err(`The following keys are not allowed for ${op}(): ${bad.join(", ")}.\nAllowed keys: ${ROOT_KEYS_MAP[op].join(", ")}`);
         }
-        const Pascal = ucfirst(model);
-        const modelProp = lcfirstWord(model); // ✅ ensure lowerCamel on $prisma
-        const plural = (stateName && stateName.trim()) || toPlural(modelProp);
-        const methodAliases = METHOD_ALIASES(Pascal);
-        /* ---------- PHP (top) ---------- */
-        const bodyLines = [];
-        if (withWhereStub) {
-            bodyLines.push(`    'where' => [`);
-            bodyLines.push(`        // 'email' => ['contains' => $q],`);
-            bodyLines.push(`        // 'isActive' => true,`);
-            bodyLines.push(`        // 'role' => ['some' => ['name' => ['contains' => $q]]],`);
-            bodyLines.push(`    ],`);
-        }
-        if (select.length)
-            bodyLines.push(...buildSelectBlock(select));
-        if (include.length || counts.length) {
-            const inc = buildIncludeBlock(include, counts);
-            if (inc.length) {
-                bodyLines.push(`    'include' => [`);
-                bodyLines.push(...inc);
-                bodyLines.push(`    ],`);
-            }
-        }
-        if (omit.length)
-            bodyLines.push(...buildOmitBlock(omit));
+        const incBlock = (() => {
+            const inc = _inc(include, counts);
+            return inc.length ? ["    'include' => [", ...inc, "    ],"] : [];
+        })();
         const php = [
             "<?php",
             "use Lib\\Prisma\\Classes\\Prisma;",
@@ -202,11 +156,21 @@ export function registerCrudReadGuide(server, _ctx) {
             `$prisma = Prisma::getInstance();`,
             "",
             `$${plural} = $prisma->${modelProp}->${op}([`,
-            ...bodyLines,
+            ...(withWhereStub
+                ? [
+                    "    'where' => [",
+                    "        // 'email' => ['contains' => $q],",
+                    "        // 'isActive' => true,",
+                    "        // 'roles' => ['some' => ['name' => ['contains' => $q]]],",
+                    "    ],",
+                ]
+                : []),
+            ..._sel(select),
+            ...incBlock,
+            ..._omit(omit),
             `]);`,
             "?>",
         ].join("\n");
-        /* ---------- HTML (middle) ---------- */
         const fieldLines = fields.length
             ? fields.map((f) => `      <div><strong>${f}:</strong> {{ ${itemAlias}.${f} }}</div>`)
             : [
@@ -216,57 +180,52 @@ export function registerCrudReadGuide(server, _ctx) {
                 `      -->`,
             ];
         const html = [
-            "<!-- Generic HTML using <template pp-for> (UI-agnostic) -->",
+            "<!-- Generic HTML using <template pp-for> -->",
             `<div class="data-list">`,
             `  <template pp-for="${itemAlias} in ${plural}">`,
             `    <article class="data-row">`,
             ...fieldLines,
-            `      <!-- actions example:`,
-            `           <button onclick="edit${Pascal}(${itemAlias})">Edit</button>`,
-            `           <button onclick="remove${Pascal}(${itemAlias}.id)">Delete</button>`,
-            `      -->`,
             `    </article>`,
             `  </template>`,
             `</div>`,
         ].join("\n");
-        /* ---------- JS (bottom; wrap in <script>) ---------- */
         const js = [
             "<script>",
-            "// Place this <script> tag at the bottom of the page.",
-            `const [${plural}, set${Pascal}s] = pphp.state(<?= json_encode($${plural}) ?>); // local state; convert to pphp.share if you need cross-file sharing`,
-            "// Add any local filters/state you need:",
+            "// Bottom of page.",
+            `const [${plural}, set${Model}s] = pphp.state(<?= json_encode($${plural}) ?>);`,
             "const [q, setQ] = pphp.state('');",
             "const [status, setStatus] = pphp.state('');",
             "",
-            "// Example helpers:",
-            `export function edit${Pascal}(row) { /* open dialog, etc. */ }`,
-            `export function remove${Pascal}(id) { /* call delete, then set${Pascal}s(...) */ }`,
+            `export function edit${Model}(row) { /* open dialog, etc. */ }`,
+            `export function remove${Model}(id) { /* call delete, then set${Model}s(...) */ }`,
             "</script>",
         ].join("\n");
         const notes = [
-            "• Order: PHP first, then HTML, and the JS <script> goes at the very bottom.",
-            "• Local-first: use pphp.state (arrays/objects ok). If you need cross-file sharing later, switch to pphp.share.",
-            "• $prisma model access is lowerCamel (e.g., $prisma->userRole->findMany()).",
-            "• Do not mix `select` and `include`.",
-            "• `_count` lives inside `include` as: '_count' => ['select' => ['relation' => true]].",
-            `• Filter operators: ${Array.from(FILTER_OPERATORS).join(", ")}.`,
-            `• Relation operators: ${Array.from(RELATION_OPERATORS).join(", ")}.`,
-            "• Use `omit` to strip sensitive fields (e.g., ['password']) from the JSON payload.",
+            "• Order: PHP → HTML → JS.",
+            "• Arrays/objects are reactive directly (no `.value`).",
+            "• `_count` goes inside `include` as '_count' => ['select' => ['rel' => true]].",
+            `• Filters: ${Array.from(FILTER_OPERATORS).join(", ")}.`,
+            `• Relation ops: ${Array.from(RELATION_OPERATORS).join(", ")}.`,
         ].join("\n");
-        const hints = {
-            allowedRootKeys: Array.from(ROOT_KEYS_MAP[op]),
-            filterOperators: Array.from(FILTER_OPERATORS),
-            relationOperators: Array.from(RELATION_OPERATORS),
-            methodAliases,
-            warnings: [
-                "Do not mix `select` and `include`.",
-                "`findUnique()` requires a `where` with a unique field.",
-            ],
-        };
         const payload = {
-            meta: { model: modelProp, op, pluralState: plural, itemAlias },
+            meta: {
+                model: modelProp,
+                op,
+                pluralState: plural,
+                itemAlias,
+                prismaEnabled,
+            },
             snippets: { php, html, js, notes },
-            hints,
+            hints: {
+                allowedRootKeys: Array.from(ROOT_KEYS_MAP[op]),
+                filterOperators: Array.from(FILTER_OPERATORS),
+                relationOperators: Array.from(RELATION_OPERATORS),
+                methodAliases: aliases,
+                warnings: [
+                    "Do not mix `select` and `include`.",
+                    "`findUnique()` requires unique `where`.",
+                ],
+            },
         };
         return okAsText(payload);
     });

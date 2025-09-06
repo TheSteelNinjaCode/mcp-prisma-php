@@ -14,7 +14,7 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 3. **Components**: verify with `pphp.listComponents`; if missing, install via `pphp.component.addPPIcon` / `pphp.component.addPHPXUI`.
 4. **Two‑way binding**: `<input pp-bind-value="v" oninput="setV(this.value)" />` + `const [v, setV] = pphp.state("")`.
 5. **Styling toggle**: if `tailwindcss: true` → use **Tailwind v4** utilities; otherwise **no Tailwind** (use classes/CSS/inline).
-6. **Architecture choice (quick)**: Render‑only? → stay **reactive**. Needs DB/server? → use **MCP CRUD guides** and/or `route.php` **only** when allowed.
+6. **CRUD approach**: Use MCP **CRUD guides** — they **auto-detect** the `prisma` flag and generate the right pattern (reactive‑only vs full‑stack). No manual CRUD patterns.
 7. **Exports**: Any function referenced from markup **must be `export`ed** in the bottom `<script>`.
 
 ### Quick patterns (one‑liners)
@@ -23,14 +23,16 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 
 ### Critical gotchas (front‑loaded)
 
+- **Use CRUD guides**: Never hand‑roll CRUD — the guides auto‑detect `prisma` and produce the correct approach.
+- **Config first**: `prisma` decides reactive‑only vs full‑stack automatically.
 - **Route creation**: Create **only `index.php`** unless a layout is explicitly requested.
-- **Template expressions**: **Never** use `.value` in `{{ }}` — framework handles reactivity
+- **Template expressions**: **Never** use `.value` in `{{ }}` — framework handles reactivity.
 - **Template usage**: `<template>` **only** for `pp-for` loops; use real elements for `pp-if`.
 - **No computed**: `pphp.computed` **does not exist** — derive with `pphp.effect`.
 - **Keys**: Never key by index in `pp-for` — use a stable key like `item.id` (use `crypto.randomUUID()` for client‑side items).
 - **Select values**: DOM `<option>` values are **strings** — compare with `roleId === String(role.id)`.
 - **XML attrs**: Boolean attributes need values (`disabled="true"`), not bare `disabled`.
-- **.value usage**: Use `.value` for **operations** (`text.value.trim()`, `todos.value.filter()`, `{...form.value}`); direct properties don’t (`user.name`).
+- **.value usage**: Use `.value` for **JS operations** (`text.value.trim()`, `todos.value.filter()`, `{...form.value}`); direct property reads don’t (`user.name`).
 - **Styling**: If Tailwind enabled, prefer **classes** over `pp-bind-style`. If disabled, use `pp-bind-style` with **CSS strings**.
 
 > When answers depend on workspace state, **show the MCP outputs you used** (short).
@@ -40,16 +42,18 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 ## 1) Project detection & config
 
 - Run **`pphp.detectProject`** → must be `true` before continuing.
-- Use **`pphp.config.get`** for precise flags/paths. Honor at least:
-  - **`backendOnly`**: if not `true`, default to **page routes** (`index.php`); **do not** propose `route.php` unless asked.
+- Use **`pphp.config.get`** for precise flags/paths. **Critical flags**:
+  - **`prisma`**: **Most important** — determines reactive‑only vs full‑stack approach.
   - **`tailwindcss`**: `true` → Tailwind v4 classes; `false`/missing → plain CSS/inline styles.
-  - **`prisma`**: gates usage of Prisma ORM and related tools.
+  - **`backendOnly`**: if not `true`, default to **page routes** (`index.php`).
 
-**Decision helper (reactive vs CRUD/server):**
+**Intelligent CRUD Decision (automatic):**  
+The CRUD guide tools **auto‑detect** the approach:
 
-- **Single route creation** → `app/X/index.php` only (no layout).
-- **Render‑only / local state** → stay client‑reactive, no server calls.
-- **Needs DB / persistence / server validation** → use MCP **CRUD guides** to scaffold server flow. Only create `route.php` when `backendOnly: true` or explicitly requested. Use `pphp.prisma.prepare` before ORM actions if needed.
+- **`prisma: false`** → CRUD guides generate **reactive frontend‑only** code (client state, no server).
+- **`prisma: true`** → CRUD guides generate **full‑stack** code (database + server + reactive frontend).
+
+**Never write manual patterns** — always use `pphp.crud.*Guide` tools which handle complexity automatically.
 
 Helpful lookups: `pphp.listRoutes`, `pphp.listComponents`. Database helper: `pphp.prisma.prepare` (validates env, migrates, generates).
 
@@ -113,12 +117,22 @@ $data = ...;
 
 After creating folders/files, run `pphp.listRoutes` and ensure each route folder has **`index.php`**.
 
-### 2.4 Architecture patterns (reactive vs CRUD)
+### 2.4 Architecture patterns (CRUD guides handle everything)
 
-- **Reactive‑only page**: read data via PHP at top, render, and manage UI with client state. **No custom fetches.**
-- **CRUD flow**: use MCP **CRUD guides** to generate/guide server endpoints and client hooks:
-  - `pphp.crud.createGuide` / `readGuide` / `updateGuide` / `deleteGuide`
-  - Prefer generated patterns over ad‑hoc `fetch`; only use `route.php` when permitted by config/request.
+**Don't decide manually** — let the tools decide based on config:
+
+```text
+pphp.crud.createGuide  # → reactive-only OR full-stack (based on prisma flag)
+pphp.crud.readGuide    # → reactive-only OR full-stack (based on prisma flag)
+pphp.crud.updateGuide  # → reactive-only OR full-stack (based on prisma flag)
+pphp.crud.deleteGuide  # → reactive-only OR full-stack (based on prisma flag)
+```
+
+**Examples:**
+
+- User: "Create a todo CRUD system" + `prisma: false` → generates reactive frontend‑only.
+- User: "Create a todo CRUD system" + `prisma: true` → generates full‑stack with database.
+- **AI doesn't choose** — the tools choose based on configuration.
 
 ---
 
@@ -138,8 +152,6 @@ After creating folders/files, run `pphp.listRoutes` and ensure each route folder
   const [done, setDone] = pphp.state(false);
 </script>
 ```
-
-### 3.2 `.value` policy (**AI frequently gets this wrong**)
 
 ### 3.2 `.value` policy (**AI frequently gets this wrong**)
 
@@ -433,21 +445,22 @@ pp-bind-style="{ backgroundColor: isActive ? 'blue' : 'gray', color: 'white' }"
 
 ## 7) MCP tools reference (grouped)
 
-| Group             | Tool                                                                                             | Purpose                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| **Project**       | `pphp.detectProject`                                                                             | Confirm Prisma PHP workspace.                                     |
-| **Config/Routes** | `pphp.config.get`, `pphp.config.describe`, `pphp.listRoutes`                                     | Read flags/paths; list all routes.                                |
-| **Components**    | `pphp.listComponents`, `pphp.component.addPPIcon`, `pphp.component.addPHPXUI`                    | Verify/install icons & PHPXUI components.                         |
-| **ORM/DB**        | `pphp.prisma.prepare`, `pphp.prisma.generate`                                                    | Prepare DB (env + migrate + generate) / regenerate Prisma client. |
-| **Scaffold**      | `pphp.scaffoldDashboard`                                                                         | Scaffold dashboard UI honoring config toggles.                    |
-| **CRUD Guides**   | `pphp.crud.createGuide`, `pphp.crud.readGuide`, `pphp.crud.updateGuide`, `pphp.crud.deleteGuide` | Task‑focused guidance.                                            |
-| **Admin/Scripts** | `pphp.npm.script`, `pphp.updateFilterFiles`, `pphp.project.update`, `pphp.generateSwaggerDocs`   | Package scripts, filters, project update, Swagger docs.           |
+| Group             | Tool                                                                                             | Purpose                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| **Project**       | `pphp.detectProject`                                                                             | Confirm Prisma PHP workspace.                                                                                    |
+| **Config/Routes** | `pphp.config.get`, `pphp.config.describe`, `pphp.listRoutes`                                     | Read flags/paths; list all routes.                                                                               |
+| **Components**    | `pphp.listComponents`, `pphp.component.addPPIcon`, `pphp.component.addPHPXUI`                    | Verify/install icons & PHPXUI components.                                                                        |
+| **ORM/DB**        | `pphp.prisma.prepare`, `pphp.prisma.generate`                                                    | Prepare DB (env + migrate + generate) / regenerate Prisma client.                                                |
+| **Scaffold**      | `pphp.scaffoldDashboard`                                                                         | Scaffold dashboard UI honoring config toggles.                                                                   |
+| **CRUD Guides**   | `pphp.crud.createGuide`, `pphp.crud.readGuide`, `pphp.crud.updateGuide`, `pphp.crud.deleteGuide` | **Intelligent CRUD**: Auto‑detects `prisma` flag and generates reactive‑only **or** full‑stack code accordingly. |
+| **Admin/Scripts** | `pphp.npm.script`, `pphp.updateFilterFiles`, `pphp.project.update`, `pphp.generateSwaggerDocs`   | Package scripts, filters, project update, Swagger docs.                                                          |
 
 ---
 
 ## Answering style (one box)
 
 - Be concise and **tool‑grounded**. Always read config first.
+- **For CRUD requests**: Use `pphp.crud.*Guide` tools — they automatically detect the `prisma` flag and generate the appropriate code. Never write manual CRUD patterns.
 - If you use components/routes/config/ORM, **call the corresponding MCP tool** and show short outputs.
 - Follow **file order** and **Tailwind toggle** rules.
 - Export handlers referenced by markup. Close all tags. Use stable keys and normalized id comparisons.
