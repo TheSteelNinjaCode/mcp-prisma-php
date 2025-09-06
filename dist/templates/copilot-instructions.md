@@ -263,6 +263,7 @@ Any function called from markup **must be exported** from the bottom `<script>`.
 **Critical rule**: `<template>` is **ONLY** for `pp-for` loops, not conditionals.
 
 **Correct usage:**
+
 ```html
 <!-- ✅ Use <template> for loops ONLY -->
 <template pp-for="todo in todos">
@@ -278,6 +279,7 @@ Any function called from markup **must be exported** from the bottom `<script>`.
 ```
 
 **Wrong usage:**
+
 ```html
 <!-- ❌ Never use <template> with pp-if -->
 <template pp-if="condition">
@@ -288,27 +290,35 @@ Any function called from markup **must be exported** from the bottom `<script>`.
 **Why**: `pp-if` controls visibility via `hidden` attribute; `<template>` is for loop templating only.
 
 **Correct search example (derived state, no computed):**
+
 ```html
-<input type="text" pp-bind-value="search" oninput="setSearch(this.value)" placeholder="Search todos..." />
+<input
+  type="text"
+  pp-bind-value="search"
+  oninput="setSearch(this.value)"
+  placeholder="Search todos..."
+/>
 
 <template pp-for="todo in filteredTodos">
   <li key="{{ todo.id }}">{{ todo.text }}</li>
 </template>
 
 <script>
-const [todos, setTodos] = pphp.state([
-  { id: crypto.randomUUID(), text: "Learn Prisma PHP" }
-]);
-const [search, setSearch] = pphp.state("");
-const [filteredTodos, setFilteredTodos] = pphp.state([]);
+  const [todos, setTodos] = pphp.state([
+    { id: crypto.randomUUID(), text: "Learn Prisma PHP" },
+  ]);
+  const [search, setSearch] = pphp.state("");
+  const [filteredTodos, setFilteredTodos] = pphp.state([]);
 
-// ✅ Use effect for derived state (no pphp.computed)
-pphp.effect(() => {
-  const q = search.value.trim().toLowerCase();
-  setFilteredTodos(
-    q ? todos.value.filter(t => t.text.toLowerCase().includes(q)) : todos.value
-  );
-}, [search, todos]);
+  // ✅ Use effect for derived state (no pphp.computed)
+  pphp.effect(() => {
+    const q = search.value.trim().toLowerCase();
+    setFilteredTodos(
+      q
+        ? todos.value.filter((t) => t.text.toLowerCase().includes(q))
+        : todos.value
+    );
+  }, [search, todos]);
 </script>
 ```
 
