@@ -24,6 +24,8 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 ### Critical gotchas (front‑loaded)
 
 - **Route creation**: Create **only `index.php`** unless a layout is explicitly requested.
+- **Template usage**: `<template>` **only** for `pp-for` loops; use real elements for `pp-if`.
+- **No computed**: `pphp.computed` **does not exist** — derive with `pphp.effect`.
 - **Keys**: Never key by index in `pp-for` — use a stable key like `item.id` (use `crypto.randomUUID()` for client‑side items).
 - **Select values**: DOM `<option>` values are **strings** — compare with `roleId === String(role.id)`.
 - **XML attrs**: Boolean attributes need values (`disabled="true"`), not bare `disabled`.
@@ -255,6 +257,60 @@ Any function called from markup **must be exported** from the bottom `<script>`.
 ```
 
 **Wrong:** omitting `export` causes runtime lookup failures.
+
+### 3.7 Template vs Element usage (**AI gets this wrong**)
+
+**Critical rule**: `<template>` is **ONLY** for `pp-for` loops, not conditionals.
+
+**Correct usage:**
+```html
+<!-- ✅ Use <template> for loops ONLY -->
+<template pp-for="todo in todos">
+  <li key="{{ todo.id }}">{{ todo.text }}</li>
+</template>
+
+<!-- ✅ Use actual HTML elements for conditionals -->
+<div pp-if="isEditing" class="flex gap-2">
+  <input type="text" />
+  <button>Save</button>
+</div>
+<span pp-else>{{ todo.text }}</span>
+```
+
+**Wrong usage:**
+```html
+<!-- ❌ Never use <template> with pp-if -->
+<template pp-if="condition">
+  <div>Content</div>
+</template>
+```
+
+**Why**: `pp-if` controls visibility via `hidden` attribute; `<template>` is for loop templating only.
+
+**Correct search example (derived state, no computed):**
+```html
+<input type="text" pp-bind-value="search" oninput="setSearch(this.value)" placeholder="Search todos..." />
+
+<template pp-for="todo in filteredTodos">
+  <li key="{{ todo.id }}">{{ todo.text }}</li>
+</template>
+
+<script>
+const [todos, setTodos] = pphp.state([
+  { id: crypto.randomUUID(), text: "Learn Prisma PHP" }
+]);
+const [search, setSearch] = pphp.state("");
+const [filteredTodos, setFilteredTodos] = pphp.state([]);
+
+// ✅ Use effect for derived state (no pphp.computed)
+pphp.effect(() => {
+  const q = search.value.trim().toLowerCase();
+  setFilteredTodos(
+    q ? todos.value.filter(t => t.text.toLowerCase().includes(q)) : todos.value
+  );
+}, [search, todos]);
+</script>
+```
 
 ---
 
