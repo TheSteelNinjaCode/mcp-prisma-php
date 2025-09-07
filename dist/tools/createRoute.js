@@ -185,7 +185,6 @@ ${dynamicParams
                     : generateInlineContent(routeTitle, description, urlPath, dynamicParams.filter((p) => typeof p === "string"));
                 routeContent = `<?php
 use Lib\\MainLayout;
-use Lib\\Request;
 ${dynamicParamCode}
 MainLayout::$title = '${phpEscape(routeTitle)}';
 MainLayout::$description = '${phpEscape(description)}';
