@@ -89,10 +89,21 @@ function looksLikeIconName(query) {
     }
     return false;
 }
+/** Helper to create namespace hints for success messages */
+function createNamespaceHint(components) {
+    if (components.length === 0)
+        return "";
+    if (components.length === 1) {
+        return `Import with: use Lib\\PHPXUI\\${components[0]}; then use <${components[0]} /> in markup.`;
+    }
+    return `Import with: use Lib\\PHPXUI\\{${components.join(", ")}}; then use as HTML tags in markup.`;
+}
 export function registerAddPHPXUIComponent(server, ctx) {
     server.registerTool("pphp.component.addPHPXUI", {
         title: "Add Component (PHPXUI)",
-        description: "Add one or more PHPXUI components (shadcn-style) such as Dialog, Toast, or Sheet. Prefers local catalogue; auto-installs if missing.",
+        description: "Add one or more PHPXUI components (shadcn-style) such as Dialog, Toast, or Sheet. " +
+            "Components are installed in the Lib\\PHPXUI namespace following PSR-4 autoloading. " +
+            "Use imports like: use Lib\\PHPXUI\\{Component1, Component2}; then use as HTML tags in markup.",
         inputSchema: {
             // Back-compat: support `name`, but also `names` for multiples.
             name: z.string().optional(),
@@ -141,7 +152,7 @@ export function registerAddPHPXUIComponent(server, ctx) {
                             content: [
                                 {
                                     type: "text",
-                                    text: `Looks like an icon — routed to PPIcons. Icon '${only}' added.`,
+                                    text: `Looks like an icon — routed to PPIcons. Icon '${only}' added. Import with: use Lib\\PPIcons\\${only}; then use <${only} /> in markup.`,
                                 },
                             ],
                         };
@@ -211,11 +222,12 @@ export function registerAddPHPXUIComponent(server, ctx) {
             if (localCli) {
                 const { results, failures } = runAdd(localCli);
                 if (failures.length === 0) {
+                    const hint = createNamespaceHint(results);
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `Component(s) added (local phpxui): ${results.join(", ")}`,
+                                text: `Component(s) added (local phpxui): ${results.join(", ")}. ${hint}`,
                             },
                         ],
                     };
@@ -253,11 +265,12 @@ export function registerAddPHPXUIComponent(server, ctx) {
                 }
                 const { results, failures } = runAdd(after);
                 if (failures.length === 0) {
+                    const hint = createNamespaceHint(results);
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `Component(s) added (installed local phpxui${ver}): ${results.join(", ")}`,
+                                text: `Component(s) added (installed local phpxui${ver}): ${results.join(", ")}. ${hint}`,
                             },
                         ],
                     };
@@ -294,11 +307,12 @@ export function registerAddPHPXUIComponent(server, ctx) {
                         fail.push(`${comp}: ${r.message}`);
                 }
                 if (fail.length === 0) {
+                    const hint = createNamespaceHint(res);
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `Component(s) added (global/npx ${npxPkg}): ${res.join(", ")}`,
+                                text: `Component(s) added (global/npx ${npxPkg}): ${res.join(", ")}. ${hint}`,
                             },
                         ],
                     };
@@ -327,11 +341,12 @@ export function registerAddPHPXUIComponent(server, ctx) {
                         fail.push(`${comp}: ${r.message}`);
                 }
                 if (fail.length === 0) {
+                    const hint = createNamespaceHint(res);
                     return {
                         content: [
                             {
                                 type: "text",
-                                text: `Component(s) added (npx ${npxPkg}): ${res.join(", ")}`,
+                                text: `Component(s) added (npx ${npxPkg}): ${res.join(", ")}. ${hint}`,
                             },
                         ],
                     };

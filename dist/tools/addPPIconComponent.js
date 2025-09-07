@@ -107,10 +107,24 @@ function validateRequestedNames(reqNames) {
     }
     return { valid, missing };
 }
+/** Helper to create namespace hints for success messages */
+function createNamespaceHint(icons, isAll = false) {
+    if (isAll) {
+        return "Import with: use Lib\\PPIcons\\{IconName1, IconName2, ...}; then use <IconName /> in markup.";
+    }
+    if (icons.length === 0)
+        return "";
+    if (icons.length === 1) {
+        return `Import with: use Lib\\PPIcons\\${icons[0]}; then use <${icons[0]} /> in markup.`;
+    }
+    return `Import with: use Lib\\PPIcons\\{${icons.join(", ")}}; then use as HTML tags in markup.`;
+}
 export function registerAddPPIconComponent(server, ctx) {
     server.registerTool("pphp.component.addPPIcon", {
         title: "Add Component (PPIcons)",
-        description: "Add one or more icon components from the PPIcons catalogue (lucide-style). Resolves canonical names and ensures icons are available in the project.",
+        description: "Add one or more icon components from the PPIcons catalogue (lucide-style). " +
+            "Icons are installed in the Lib\\PPIcons namespace following PSR-4 autoloading. " +
+            "Use imports like: use Lib\\PPIcons\\{Icon1, Icon2}; then use <IconName /> as HTML tags in markup.",
         inputSchema: {
             // Provide either `names` or set `all: true`
             names: z.union([z.string(), z.array(z.string())]).optional(),
@@ -207,13 +221,14 @@ export function registerAddPPIconComponent(server, ctx) {
                 const cmd = `${JSON.stringify(localCli)} ${buildArgList()}`;
                 const r = safeExec(cmd, ctx.ROOT);
                 if (r.ok) {
+                    const hint = createNamespaceHint(names, args.all);
                     return {
                         content: [
                             {
                                 type: "text",
                                 text: args.all
-                                    ? `All icons installed (local ppicons).`
-                                    : `Icons added: ${names.join(", ")} (local ppicons).`,
+                                    ? `All icons installed (local ppicons). ${hint}`
+                                    : `Icons added: ${names.join(", ")} (local ppicons). ${hint}`,
                             },
                         ],
                     };
@@ -247,13 +262,14 @@ export function registerAddPPIconComponent(server, ctx) {
                 const cmd = `${JSON.stringify(after)} ${buildArgList()}`;
                 const r = safeExec(cmd, ctx.ROOT);
                 if (r.ok) {
+                    const hint = createNamespaceHint(names, args.all);
                     return {
                         content: [
                             {
                                 type: "text",
                                 text: args.all
-                                    ? `All icons installed (installed local ppicons${ver}).`
-                                    : `Icons added: ${names.join(", ")} (installed local ppicons${ver}).`,
+                                    ? `All icons installed (installed local ppicons${ver}). ${hint}`
+                                    : `Icons added: ${names.join(", ")} (installed local ppicons${ver}). ${hint}`,
                             },
                         ],
                     };
@@ -276,13 +292,14 @@ export function registerAddPPIconComponent(server, ctx) {
                 const npxPkg = pinned ? `ppicons@${pinned}` : "ppicons";
                 const r = safeExec(`npx -y ${npxPkg} ${buildArgList()}`, ctx.ROOT);
                 if (r.ok) {
+                    const hint = createNamespaceHint(names, args.all);
                     return {
                         content: [
                             {
                                 type: "text",
                                 text: args.all
-                                    ? `All icons installed (global/npx ${npxPkg}).`
-                                    : `Icons added: ${names.join(", ")} (global/npx ${npxPkg}).`,
+                                    ? `All icons installed (global/npx ${npxPkg}). ${hint}`
+                                    : `Icons added: ${names.join(", ")} (global/npx ${npxPkg}). ${hint}`,
                             },
                         ],
                     };
@@ -297,13 +314,14 @@ export function registerAddPPIconComponent(server, ctx) {
                 const npxPkg = pinned ? `ppicons@${pinned}` : "ppicons";
                 const r = safeExec(`npx -y ${npxPkg} ${buildArgList()}`, ctx.ROOT);
                 if (r.ok) {
+                    const hint = createNamespaceHint(names, args.all);
                     return {
                         content: [
                             {
                                 type: "text",
                                 text: args.all
-                                    ? `All icons installed (npx ${npxPkg}).`
-                                    : `Icons added: ${names.join(", ")} (npx ${npxPkg}).`,
+                                    ? `All icons installed (npx ${npxPkg}). ${hint}`
+                                    : `Icons added: ${names.join(", ")} (npx ${npxPkg}). ${hint}`,
                             },
                         ],
                     };

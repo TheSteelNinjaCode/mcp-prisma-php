@@ -15,10 +15,11 @@ import { registerCrudReadGuide } from "./crudReadGuide.js";
 import { registerCrudDeleteGuide } from "./crudDeleteGuide.js";
 import { registerCrudCreateGuide } from "./crudCreateGuide.js";
 import { registerCrudUpdateGuide } from "./crudUpdateGuide.js";
-import { registerScaffoldDashboard } from "./scaffoldDashboard.js";
+import { registerCreateRoute } from "./createRoute.js";
 export function registerTools(server, ctx) {
     registerAddPHPXUIComponent(server, ctx);
     registerAddPPIconComponent(server, ctx);
+    registerCreateRoute(server, ctx);
     registerCrudCreateGuide(server, ctx);
     registerCrudDeleteGuide(server, ctx);
     registerCrudReadGuide(server, ctx);
@@ -32,7 +33,6 @@ export function registerTools(server, ctx) {
     registerPrismaGenerate(server, ctx);
     registerPrismaPrepare(server, ctx);
     registerRunNpmScript(server, ctx);
-    registerScaffoldDashboard(server, ctx);
     registerUpdateFilterFiles(server, ctx);
     registerUpdateProject(server, ctx);
 }

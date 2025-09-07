@@ -9,7 +9,7 @@ export interface PrismaPhpConfig {
     swaggerDocs?: boolean;
     tailwindcss?: boolean;
     websocket?: boolean;
-    mcp?: unknown;
+    mcp?: boolean;
     prisma?: boolean;
     docker?: boolean;
     version?: string;
