@@ -126,3 +126,11 @@ These commands will:
 ---
 
 For more details, see the source code and comments in each tool. AI agents should always follow the rules above to ensure code quality and maintainability.
+
+## GitHub Repository
+
+The complete source code for MCP Prisma PHP is hosted on GitHub:
+
+[TheSteelNinjaCode/mcp-prisma-php](https://github.com/TheSteelNinjaCode/mcp-prisma-php.git)
+
+Visit the repository for installation instructions, code samples, issue tracking, and contribution guidelines.

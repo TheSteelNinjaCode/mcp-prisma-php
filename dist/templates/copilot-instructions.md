@@ -28,6 +28,7 @@ _MCP = a local tool server exposing project-aware commands. Prefer tools over gu
 - **Route creation**: Create **only `index.php`** unless a layout is explicitly requested.
 - **Template expressions**: **Never** use `.value` in `{{ }}` — framework handles reactivity.
 - **Template usage**: `<template>` **only** for `pp-for` loops; use real elements for `pp-if`.
+- **`pp-else` syntax**: use `pp-else` **without** a value (not `pp-else="true"`).
 - **No computed**: `pphp.computed` **does not exist** — derive with `pphp.effect`.
 - **Keys**: Never key by index in `pp-for` — use a stable key like `item.id` (use `crypto.randomUUID()` for client‑side items).
 - **Select values**: DOM `<option>` values are **strings** — compare with `roleId === String(role.id)`.
@@ -318,6 +319,73 @@ Any function called from markup **must be exported** from the bottom `<script>`.
 ```
 
 **Why**: `pp-if` controls visibility via `hidden` attribute; `<template>` is for loop templating only.
+
+### 3.8 Conditional editing pattern — step-by-step fix
+
+**Follow these steps to correct common AI mistakes when building inline editors.**
+
+| Step | Issue                             | Current (Wrong) Code                         | Fix Action                                  | Corrected Code                                           |
+| ---- | --------------------------------- | -------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
+| 1    | Template with `pp-if` (forbidden) | `<template pp-if="editingId === todo.id">`   | Replace `<template>` with a real element    | `<div pp-if="editingId === todo.id" class="flex gap-2">` |
+| 2    | Template with `pp-if` closing tag | `</template>`                                | Close with matching real element            | `</div>`                                                 |
+| 3    | Invalid `pp-else` syntax          | `<span pp-else="true" class="...">`          | Remove `="true"` from `pp-else`             | `<span pp-else class="...">`                             |
+| 4    | Broken conditional chain          | `<button pp-if="editingId !== todo.id" ...>` | Move button inside the `pp-else` branch     | Wrap inside the `pp-else` container                      |
+| 5    | Structure reorganization          | Elements scattered                           | Group related elements in proper containers | Use one container per conditional branch                 |
+
+**Corrected example:**
+
+```html
+<li class="flex items-center gap-2 mb-2" key="{{ todo.id }}">
+  <input
+    type="checkbox"
+    pp-bind-checked="todo.completed"
+    onchange="toggleCompleted(todo.id)"
+  />
+
+  <!-- ✅ Real element with pp-if; single conditional chain -->
+  <div pp-if="editingId === todo.id" class="flex gap-2 flex-1">
+    <input
+      type="text"
+      pp-bind-value="editTitle"
+      oninput="setEditTitle(this.value)"
+      class="flex-1 border rounded px-2 py-1"
+    />
+    <button
+      onclick="saveEdit(todo.id)"
+      class="px-2 py-1 bg-green-500 text-white rounded"
+    >
+      Save
+    </button>
+    <button
+      onclick="cancelEdit()"
+      class="px-2 py-1 bg-gray-400 text-white rounded"
+    >
+      Cancel
+    </button>
+  </div>
+
+  <div pp-else="true" class="flex items-center gap-2 flex-1">
+    <span
+      class="{{ todo.completed ? 'line-through text-gray-400' : 'text-gray-900' }}"
+      >{{ todo.title }}</span
+    >
+    <button
+      onclick="startEdit(todo.id, todo.title)"
+      class="ml-2 px-2 py-1 bg-yellow-500 text-white rounded"
+    >
+      Edit
+    </button>
+  </div>
+
+  <!-- ✅ Delete button outside conditional chain -->
+  <button
+    onclick="deleteTodo(todo.id)"
+    class="ml-2 px-2 py-1 bg-red-500 text-white rounded"
+  >
+    Delete
+  </button>
+</li>
+```
 
 **Correct search example (derived state, no computed):**
 
