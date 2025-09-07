@@ -533,7 +533,34 @@ Use when many attributes/events come from an object.
 ### 12.2 DOM & refs
 
 - `pphp.ref(key: string, index?: number)` → `HTMLElement | HTMLElement[]`  
-  Use for focus/measure/scroll; prefer declarative bindings first.
+   Use for focus/measure/scroll; prefer declarative bindings first.
+
+  **Focus-after-render rule (important)**  
+  When you reveal/mount an element via state or conditionals, **defer focus** so the DOM is ready:
+
+```html
+<input
+  type="text"
+  pp-bind-value="editTitle"
+  oninput="setEditTitle(this.value)"
+  class="border rounded px-2 py-1"
+  pp-ref="editInput"
+/>
+<script>
+  export function startEdit(todo) {
+    setEditingId(todo.id);
+    setEditTitle(todo.title);
+    // Defer focus to the next macrotask so the input exists
+    setTimeout(() => {
+      const input = pphp.ref("editInput");
+      if (input) input.focus();
+    }, 0);
+  }
+</script>
+```
+
+- `setTimeout(..., 0)` (or `requestAnimationFrame`) ensures focus happens **after** the element is inserted/hydrated.
+- For multiple elements sharing a ref, pick by index: `pphp.ref('rowInput', index)`.
 
 ### 12.3 Events
 
