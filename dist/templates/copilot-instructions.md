@@ -1,7 +1,7 @@
 # Prisma PHP • AI Brief (workspace rules)
 
 **Always use the MCP server `prisma-php` for project facts before answering.**  
-_MCP = a local tool server exposing project-aware commands. Prefer tools over guessing._
+_MCP = a local tool server exposing project‑aware commands. Prefer tools over guessing._
 
 ---
 
@@ -44,20 +44,41 @@ You are **T3 Chat**, an AI assistant powered by **Claude 4 Sonnet (Reasoning)**.
 
 ---
 
-## 3) 0) Quick Start (AI reading priority)
+## 3) Quick Start (AI reading priority)
 
-### STARTUP CHECKLIST (run these first)
+### 3.1 STARTUP CHECKLIST (run these first)
 
 1. **`pphp.detectProject`** → must be **true** before continuing.
 2. **`pphp.config.get`** → read flags you must honor: `prisma`, `tailwindcss`, `backendOnly`.
 3. **`pphp.config.describe`** → keep the validated summary in mind (paths, toggles).
 4. When needed: **`pphp.listRoutes`**, **`pphp.listComponents`**.
-5. When answers depend on workspace state, **show short MCP outputs you used**.
+5. **MANDATORY for components**: before implementing any **PHPXUI** component, plan to run **`pphp.phpxuiComponentUsage <ComponentName>`** (see 3.2).
+6. When answers depend on workspace state, **show short MCP outputs you used**.
 
-### Then follow
+### 3.2 COMPONENT USAGE RULE (**mandatory**)
+
+**Before implementing ANY PHPXUI component:**
+
+1. **Always run `pphp.phpxuiComponentUsage <ComponentName>`** to get the correct implementation pattern.
+2. **Follow the exact props and structure** shown in the usage guide.
+3. **Never guess component APIs** — the usage tool provides authoritative examples.
+
+**Example workflow:**
+
+```bash
+# 1) Check if Dialog exists
+pphp.listComponents
+# 2) Install if needed
+pphp.component.addPHPXUI Dialog
+# 3) Get correct usage pattern
+pphp.phpxuiComponentUsage Dialog
+# 4) Implement following the pattern exactly
+```
+
+### 3.3 Then follow
 
 1. **File order**: **PHP → HTML → one `<script>` at the bottom**.
-2. **Components**: verify → install → verify → import → use (see Section 8).
+2. **Components**: verify → install → verify → **check usage** → import → use (see §8).
 3. **Styling toggle**: Tailwind v4 only if `tailwindcss: true`; otherwise **no Tailwind**.
 4. **CRUD**: use CRUD guide tools (if available). They **auto‑adapt** to `prisma`.
 5. **Export handlers** referenced from markup.
@@ -99,11 +120,11 @@ $roles  = $prisma->userRole->findMany([]);
 
 ---
 
-## 4) 1) 🚨 AI Common Mistakes (read before coding)
+## 4) AI Common Mistakes (read before coding)
 
-- **Never instantiate components with PHP `new`** — use tag syntax (`<Dialog />`, `<Plus />`). See **Core Rule #2**.
-- **`<template>` is only for `pp-for`**. Use real elements for conditionals (`pp-if` / `pp-else`). See **Gotchas 10.1**.
-- **Don’t use `.value` inside templates** (`{{ }}` or attribute interpolations). See **Core Rule #3**.
+- **Never instantiate components with PHP `new`** — use tag syntax (`<Dialog />`, `<Plus />`). See **Core Rule 2.2**.
+- **`<template>` is only for `pp-for`**. Use real elements for conditionals (`pp-if` / `pp-else`). See **Gotchas §12.1**.
+- **Don’t use `.value` inside templates** (`{{ }}` or attribute interpolations). See **Core Rule 2.3**.
 - **`pp-else` is bare** (not `pp-else="true"`), and conditional chains must be contiguous.
 - **Stable keys only** in lists; never key by index. Use `item.id` (string).
 - **DOM option values are strings**: normalize `String(role.id)` in comparisons.
@@ -111,14 +132,14 @@ $roles  = $prisma->userRole->findMany([]);
 
 ---
 
-## 5) 2) 🔑 Core Rules (enhanced)
+## 5) Core Rules
 
-### 2.1 File order (priority #1) — with visuals
+### 5.1 File order (priority #1) — with visuals
 
 - Always: PHP imports + server data → HTML → **one** `<script>` at the **bottom**.
 - Never place `<script>` before markup. (Examples in Quick Start.)
 
-### 2.2 Component usage (priority #2) — **Tag syntax only**
+### 5.2 Component usage (priority #2) — **Tag syntax only**
 
 **❌ Wrong**
 
@@ -133,7 +154,7 @@ $roles  = $prisma->userRole->findMany([]);
 <Plus class="inline-block w-5 h-5 align-middle" />
 ```
 
-### 2.3 Two‑way binding (priority #3)
+### 5.3 Two‑way binding (priority #3)
 
 ```html
 <input type="text" pp-bind-value="text" oninput="setText(this.value)" />
@@ -143,9 +164,9 @@ $roles  = $prisma->userRole->findMany([]);
 ```
 
 - **Templates** never use `.value`.
-- In `<script>`, use `.value` for JS operations (e.g., `count.value + 1`, `todos.value.filter()`); property access on objects (e.g., `user.name`) needs **no** `.value`.
+- In `<script>`, use `.value` for **primitives** and when you need a **plain snapshot** of objects/arrays (spread/serialize/compare/pass across boundaries). Property access on objects/arrays (e.g., `user.name`) needs **no** `.value`.
 
-### 2.4 PSR‑4 imports at the **top** (priority #4) — with **grouped syntax**
+### 5.4 PSR‑4 imports at the **top** (priority #4) — with **grouped syntax**
 
 **composer.json**
 
@@ -164,7 +185,7 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 ?>
 ```
 
-### 2.5 `pp-bind-spread` (priority #5 — attribute merging)
+### 5.5 `pp-bind-spread` (priority #5 — attribute merging)
 
 ```html
 <img pp-bind-spread="imgProps" />
@@ -181,7 +202,7 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 </script>
 ```
 
-### 2.6 Lists & identity (priority #6)
+### 5.6 Lists & identity (priority #6)
 
 - Use **stable string ids**; never key by index.
 
@@ -191,7 +212,7 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 </template>
 ```
 
-### 2.7 Export functions (priority #7)
+### 5.7 Export functions (priority #7)
 
 ```html
 <button onclick="save()">Save</button>
@@ -204,7 +225,7 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 
 ---
 
-## 6) 3) 🏷️ XML/XHTML Rules (critical syntax)
+## 6) XML/XHTML Rules (critical syntax)
 
 - **Boolean attributes require explicit values**: `disabled="true"`, `readonly="true"`, `selected="true"`.
 - **Void elements self‑close**: `<input … />`, `<img … />`, `<hr />`, `<br />`.
@@ -228,7 +249,7 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 
 ---
 
-## 7) 4) 📦 PSR‑4 Complete Guide
+## 7) PSR‑4 Complete Guide
 
 **Composer mapping (example)**
 
@@ -266,18 +287,20 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 
 ---
 
-## 8) 5) 🔄 Component Workflow (verify → install → verify → import → use)
+## 8) 🔄 Component Workflow (updated: verify → install → verify → **check usage** → import → use)
 
 1. **Verify**: `pphp.listComponents` for fully‑qualified classes (e.g., `Lib\PPIcons\Eye`, `Lib\PHPXUI\Dialog`).
 2. **Install if missing**: Icons → `pphp.component.addPPIcon`; UI → `pphp.component.addPHPXUI`.
 3. **Verify again** via `pphp.listComponents`.
-4. **Import** with grouped `use …;` at the **top**.
-5. **Use tags** (`<Eye />`, `<Dialog>…</Dialog>`), **not** `new`.
+4. **🆕 Check Usage**: `pphp.phpxuiComponentUsage <ComponentName>` for correct implementation patterns, required props, and examples.
+5. **Import** with grouped `use …;` at the **top**.
+6. **Use tags** (`<Eye />`, `<Dialog>…</Dialog>`), **not** `new`.
 
 ---
 
-## 9) 6) Components & Icons (usage)
+## 9) Components & Icons (usage)
 
+- **Usage patterns**: **Always check `pphp.phpxuiComponentUsage` before implementing** any PHPXUI component to get correct props, structure, and examples.
 - **Tag syntax only** (`<Plus />`, `<Dialog />`).
 - **Events require exported handlers** in the bottom `<script>`.
 - **Lists**: components inside `pp-for` require **stable keys** on the parent element.
@@ -300,9 +323,9 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 
 ---
 
-## 10) 7) 🧭 Comprehensive Routing (enhanced)
+## 10) 🧭 Comprehensive Routing (enhanced)
 
-### 7.1 Route conventions (index vs layout)
+### 10.1 Route conventions (index vs layout)
 
 - A folder is a **segment**.
   - `app/dashboard/index.php` → route `/dashboard`
@@ -310,22 +333,22 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 - `layout.php` is **not** a route; it provides **shared UI** for the segment and its children.
 - **Create `layout.php` only when requested** (or for scaffolded areas).
 
-### 7.2 Route handlers (`route.php`) — when to create
+### 10.2 Route handlers (`route.php`) — when to create
 
 Create **only** if `backendOnly: true` **or** explicitly requested. Do **not** create by default.  
 Supported methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`.
 
-### 7.3 Route groups `(group)`
+### 10.3 Route groups `(group)`
 
 - Wrap a folder name in parentheses to create a **route group**:  
   `app/(admin)/users/index.php` → URL remains `/users`.
 - Groups can have their own `layout.php` which **does not** change the URL path.
 
-### 7.4 Private routes `_private`
+### 10.4 Private routes `_private`
 
 - Place internal/server‑only pages in `app/_private/...` (not user‑facing).
 
-### 7.5 Dynamic route params & examples
+### 10.5 Dynamic route params & examples
 
 - **Brackets** denote dynamic segments. Catch‑all example:  
   `app/api/auth/[...pphpauth]/route.php`
@@ -338,7 +361,7 @@ $params  = Request::$params;        // query/search params (?q=...)
 ?>
 ```
 
-### 7.6 Request class (server‑side) — redirects & params
+### 10.6 Request class (server‑side) — redirects & params
 
 ```php
 <?php
@@ -351,7 +374,7 @@ $params = Request::$params;        // URL/search params (?q=...)
 ?>
 ```
 
-### 7.7 XHTML requirements & verification workflow
+### 10.7 XHTML requirements & verification workflow
 
 - See **XML/XHTML Rules** (Section 6) for boolean attributes & self‑closing tags.
 - **Verification workflow**:
@@ -362,7 +385,7 @@ $params = Request::$params;        // URL/search params (?q=...)
 3) If a route is missing, ensure the folder contains index.php (page) or route.php (handler).
 ```
 
-### 7.8 Examples (mapping)
+### 10.8 Examples (mapping)
 
 ```
 /                 → app/index.php
@@ -372,11 +395,17 @@ $params = Request::$params;        // URL/search params (?q=...)
 /api/user         → app/api/user/route.php     (handler only)
 ```
 
+### 10.9 Programmatic Route Creation
+
+- Use **`pphp.route.create`** to create new routes with proper structure.
+- Handles dynamic segments and file path setup automatically.
+- Preferred over manual file creation for complex routing scenarios.
+
 ---
 
-## 11) 8) 🎨 Styling & UI (consolidated)
+## 11) 🎨 Styling & UI (consolidated)
 
-### 8.1 Tailwind vs style decision
+### 11.1 Tailwind vs style decision
 
 1. Check `tailwindcss` in config.
 2. If `true` → prefer **class** binding; if `false` → use **`pp-bind-style`** with **CSS strings**.
@@ -395,25 +424,35 @@ $params = Request::$params;        // URL/search params (?q=...)
 
 ```html
 <span
+  class="text-lg"
   pp-bind-style="done ? 'text-decoration: line-through; color:#9ca3af;' : ''"
 >
   {{ todo.text }}
 </span>
 ```
 
-### 8.2 Style binding syntax
+### 11.2 Style binding syntax
 
 - `pp-bind-style` expects **CSS string**: `'prop: value; prop2: value2;'` (not JS objects).
 
-### 8.3 `pp-bind-spread` (see **Core Rule 2.5**)
+### 11.3 `pp-bind-spread` (see **Core Rule 5.5**)
 
 Use when many attributes/events come from an object.
 
 ---
 
-## 12) 9) Conditional rendering & inline editors (gotchas)
+## 12) 🗃️ Database (Prisma)
 
-### 9.1 `<template>` vs real elements
+### 12.1 Database Preparation
+
+- **Full setup**: Use **`pphp.prisma.prepare`** for complete database initialization (checks config, validates `DATABASE_URL`, syncs schema provider, runs migrations or db push, then generates client).
+- **Client only**: Use **`pphp.prisma.generate`** for just regenerating the client.
+
+---
+
+## 13) Conditional rendering & inline editors (gotchas)
+
+### 13.1 `<template>` vs real elements
 
 **✅ Use `<template>` only for loops**
 
@@ -436,7 +475,7 @@ Use when many attributes/events come from an object.
 <template pp-if="isEditing">…</template>
 ```
 
-### 9.2 Common inline-edit fix (summary)
+### 13.2 Common inline‑edit fix (summary)
 
 - Replace `<template pp-if>` with a real element.
 - `pp-else` has **no value**.
@@ -445,9 +484,9 @@ Use when many attributes/events come from an object.
 
 ---
 
-## 13) 10) 📚 Rich Examples
+## 14) 📚 Rich Examples
 
-### 10.1 Display & compute
+### 14.1 Display & compute
 
 ```html
 {{ user.name }}
@@ -464,7 +503,7 @@ Use when many attributes/events come from an object.
 </script>
 ```
 
-### 10.2 Conditional class vs dynamic style
+### 14.2 Conditional class vs dynamic style
 
 ```html
 <!-- Prefer classes -->
@@ -483,7 +522,7 @@ Use when many attributes/events come from an object.
 </span>
 ```
 
-### 10.3 Route handler with redirect & dynamic params
+### 14.3 Route handler with redirect & dynamic params
 
 ```
 /src/app/api/auth/[...pphpauth]/route.php
@@ -501,27 +540,27 @@ Use when many attributes/events come from an object.
 
 ---
 
-## 14) 11) 🧰 MCP tools (single reference table)
+## 15) 🧰 MCP tools (single reference table — updated)
 
-| Group             | Tool                                                                                             | Purpose                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
-| **Project**       | `pphp.detectProject`                                                                             | Confirm Prisma PHP workspace.                                                |
-| **Config/Routes** | `pphp.config.get`, `pphp.config.describe`, `pphp.listRoutes`                                     | Read flags/paths; list routes.                                               |
-| **Components**    | `pphp.listComponents`, `pphp.component.addPPIcon`, `pphp.component.addPHPXUI`                    | Verify/install icons & PHPXUI components.                                    |
-| **ORM/DB**        | `pphp.prisma.generate`                                                                           | Generate Prisma PHP client (when `prisma: true`).                            |
-| **Scaffold/Docs** | `pphp.generateSwaggerDocs`                                                                       | Generate Swagger docs (when enabled).                                        |
-| **Admin/Scripts** | `pphp.npm.script`, `pphp.npm.dev`, `pphp.updateFilterFiles`, `pphp.project.update`               | Package scripts, run dev, normalize filters, project update.                 |
-| **CRUD Guides\*** | `pphp.crud.createGuide`, `pphp.crud.readGuide`, `pphp.crud.updateGuide`, `pphp.crud.deleteGuide` | _If available_: generate CRUD patterns that **auto-adapt** to `prisma` flag. |
+| Group             | Tool                                                                                                       | Purpose                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Project**       | `pphp.detectProject`                                                                                       | Confirm Prisma PHP workspace.                                                |
+| **Config/Routes** | `pphp.config.get`, `pphp.config.describe`, `pphp.listRoutes`, `pphp.route.create`                          | Read flags/paths; list/create routes.                                        |
+| **Components**    | `pphp.listComponents`, `pphp.component.addPPIcon`, `pphp.component.addPHPXUI`, `pphp.phpxuiComponentUsage` | Verify/install/check usage of icons & PHPXUI components.                     |
+| **ORM/DB**        | `pphp.prisma.generate`, `pphp.prisma.prepare`                                                              | Generate Prisma PHP client; full database preparation.                       |
+| **Scaffold/Docs** | `pphp.generateSwaggerDocs`                                                                                 | Generate Swagger docs (when enabled).                                        |
+| **Admin/Scripts** | `pphp.npm.script`, `pphp.updateFilterFiles`, `pphp.project.update`                                         | Package scripts, normalize filters, project update.                          |
+| **CRUD Guides\*** | `pphp.crud.createGuide`, `pphp.crud.readGuide`, `pphp.crud.updateGuide`, `pphp.crud.deleteGuide`           | _If available_: generate CRUD patterns that **auto‑adapt** to `prisma` flag. |
 
 > If a referenced tool is not present in your MCP, skip it and follow the rest of the rules.
 
 ---
 
-## 15) 12) PPHP runtime API (public, safe to use in `<script>`)
+## 16) PPHP runtime API (public, safe to use in `<script>`)
 
 > These are the **public** runtime methods. If it's not listed here, treat it as **private**.
 
-### 12.1 State & effects
+### 16.1 State & effects
 
 - `pphp.state<T>(initial?: T)` → `[getterFn, setFn]`
   - Use `.value` for **primitives** and when you need a **plain snapshot** of objects/arrays (spread/serialize/compare/pass across boundaries).
@@ -530,13 +569,13 @@ Use when many attributes/events come from an object.
 - `pphp.effect(fn, deps?)`
   - `[]` → run once on mount; `[dep]` → run on changes; omit deps to run each update.
 
-### 12.2 DOM & refs
+### 16.2 DOM & refs
 
 - `pphp.ref(key: string, index?: number)` → `HTMLElement | HTMLElement[]`  
-   Use for focus/measure/scroll; prefer declarative bindings first.
+  Use for focus/measure/scroll; prefer declarative bindings first.
 
-  **Focus-after-render rule (important)**  
-  When you reveal/mount an element via state or conditionals, **defer focus** so the DOM is ready:
+**Focus‑after‑render rule (important)**  
+When you reveal/mount an element via state or conditionals, **defer focus** so the DOM is ready:
 
 ```html
 <input
@@ -559,15 +598,14 @@ Use when many attributes/events come from an object.
 </script>
 ```
 
-- `setTimeout(..., 0)` (or `requestAnimationFrame`) ensures focus happens **after** the element is inserted/hydrated.
 - For multiple elements sharing a ref, pick by index: `pphp.ref('rowInput', index)`.
 
-### 12.3 Events
+### 16.3 Events
 
 - `pphp.dispatchEvent(target, valueOrUpdater, opts?)` → `Promise<string | false>`  
   `opts.scope`: `"current" | "parent" | "root" | string | string[]`.
 
-### 12.4 Navigation, fetch & sync
+### 16.4 Navigation, fetch & sync
 
 - `pphp.redirect(url: string)` → `Promise<void>`
 - `pphp.abortActiveRequest(): void`
@@ -576,11 +614,11 @@ Use when many attributes/events come from an object.
 - `pphp.sync(...prefixes: string[])` → `Promise<void>` (partial re-render by selectors/prefixes)
 - `pphp.fetchAndUpdateBodyContent()` → `Promise<void>`
 
-### 12.5 Portals & hydration
+### 16.5 Portals & hydration
 
 - `pphp.hydratePortal(root?: ParentNode)` → `Promise<void>`
 
-### 12.6 Utilities
+### 16.6 Utilities
 
 - `pphp.debounce(fn, wait?: number, immediate?: boolean)` → debounced function
 - `pphp.copyCode(btnEl, containerClass, initialIconAttr, successIconAttr, iconSelector?, timeout?)`
@@ -588,7 +626,7 @@ Use when many attributes/events come from an object.
 - `pphp.getCookie(name: string)` → `string | null`
 - `pphp.debugProps()` → log current props/state info
 
-### 12.7 Local store & search params (globals)
+### 16.7 Local store & search params (globals)
 
 - `store = PPHPLocalStore.getInstance()`
   - `store.setState(partial, syncWithBackend?)`

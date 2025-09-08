@@ -102,9 +102,15 @@
     "file": "src/tools/crudDeleteGuide.ts"
   },
   {
-    "tool": "pphp.scaffoldDashboard",
-    "title": "Scaffold Dashboard",
-    "description": "Scaffolds a dashboard UI for the Prisma PHP project, including basic navigation and layout.",
-    "file": "src/tools/scaffoldDashboard.ts"
+    "tool": "pphp.route.create",
+    "title": "Create Route",
+    "description": "Creates a new route in the project, handling dynamic segments and file path setup.",
+    "file": "src/tools/createRoute.ts"
+  },
+  {
+    "tool": "pphp.phpxuiComponentUsage",
+    "title": "PHPXUI Component Usage",
+    "description": "Analyzes and reports usage of PHPXUI components in the project.",
+    "file": "src/tools/phpxuiComponentUsage.ts"
   }
 ]

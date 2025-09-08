@@ -82,7 +82,8 @@ See `tools.json` for a full list. Key tools include:
 - `crudCreateGuide`, `crudReadGuide`, `crudUpdateGuide`, `crudDeleteGuide` — CRUD operation guides
 - `runNpmScript` — Run dev server and scripts
 - `updateFilterFiles`, `updateProject` — Update filters and project
-- `scaffoldDashboard` — Scaffold a dashboard UI and supporting files
+- `createRoute` — Create a new route in the project
+- `phpxuiComponentUsage` — Analyze and report usage of PHPXUI components
 
 ## Setup & Initialization
 
