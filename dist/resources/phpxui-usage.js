@@ -1017,6 +1017,361 @@ use Lib\\PHPXUI\\{
         },
     };
 }
+function alertDoc(_tailwind) {
+    return {
+        name: "Alert",
+        requires: ["Alert", "AlertTitle", "AlertDescription"],
+        props: {
+            "Alert[variant]": 'one of "default" | "destructive" | "success" | "warning" | "info" (default: "default")',
+            "Alert[asChild]": "boolean. When true, renders the child element as the alert root.",
+            "AlertTitle[asChild]": "boolean. When true, renders the child element as the title.",
+            "AlertDescription[asChild]": "boolean. When true, renders the child element as the description.",
+            "Alert[class]": "Tailwind classes for spacing/layout.",
+        },
+        patterns: {
+            basic: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Alert,
+  AlertTitle,
+  AlertDescription
+};
+use Lib\\PPIcons\\{ CircleAlert, CircleCheck, Popcorn };
+
+?>`,
+                html: `<div class="grid gap-4">
+  <Alert>
+    <CircleCheck />
+    <AlertTitle>Success! Your changes have been saved</AlertTitle>
+    <AlertDescription>
+      This is an alert with icon, title and description.
+    </AlertDescription>
+  </Alert>
+
+  <Alert>
+    <Popcorn />
+    <AlertTitle>
+      This Alert has a title and an icon. No description.
+    </AlertTitle>
+  </Alert>
+
+  <Alert variant="destructive">
+    <CircleAlert />
+    <AlertTitle>Unable to process your payment.</AlertTitle>
+    <AlertDescription>
+      <p>Please verify your billing information and try again.</p>
+      <ul class="list-inside list-disc text-sm">
+        <li>Check your card details</li>
+        <li>Ensure sufficient funds</li>
+        <li>Verify billing address</li>
+      </ul>
+    </AlertDescription>
+  </Alert>
+</div>`,
+                notes: [
+                    'Default style requires no variant (variant="default" is implicit).',
+                    "Icons are optional; any content can appear before the title.",
+                    "Purely presentational—no internal state or behaviors.",
+                ],
+            },
+            "as-child": {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Alert,
+  AlertTitle,
+  AlertDescription
+};
+
+?>`,
+                html: `<Alert asChild="true" class="p-4">
+  <section role="alert" class="space-y-2">
+    <AlertTitle asChild="true">
+      <h4 class="font-semibold">Heads up!</h4>
+    </AlertTitle>
+    <AlertDescription asChild="true">
+      <div>
+        <p>This alert renders custom tags via <code>asChild</code>.</p>
+        <a class="underline underline-offset-4" href="/learn-more">Learn more</a>
+      </div>
+    </AlertDescription>
+  </section>
+</Alert>`,
+                notes: [
+                    'Use asChild="true" to choose semantic tags (e.g., <section>, <h4>, custom markup).',
+                    "Keep structure: optional icon → title → description.",
+                ],
+            },
+            icon: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Alert,
+  AlertTitle,
+  AlertDescription
+};
+use Lib\\PPIcons\\{ CircleCheck, CircleAlert, Info, AlertTriangle };
+
+?>`,
+                html: `<div class="grid gap-3">
+  <Alert variant="success"><CircleCheck /><AlertTitle>Saved</AlertTitle><AlertDescription>Everything looks good.</AlertDescription></Alert>
+  <Alert variant="warning"><AlertTriangle /><AlertTitle>Be careful</AlertTitle><AlertDescription>Double-check your inputs.</AlertDescription></Alert>
+  <Alert variant="info"><Info /><AlertTitle>FYI</AlertTitle><AlertDescription>We updated our terms.</AlertDescription></Alert>
+  <Alert variant="destructive"><CircleAlert /><AlertTitle>Error</AlertTitle><AlertDescription>Something went wrong.</AlertDescription></Alert>
+</div>`,
+                notes: [
+                    "Common variants shown with matching icons. Icons are optional.",
+                    "Add spacing utilities on the root/container as needed.",
+                ],
+            },
+        },
+    };
+}
+function avatarDoc(_tailwind) {
+    return {
+        name: "Avatar",
+        requires: ["Avatar", "AvatarImage", "AvatarFallback"],
+        props: {
+            // Root
+            "Avatar[asChild]": "boolean. When true, renders the child element as the avatar root (default: false).",
+            "Avatar[class]": "Tailwind classes (size/shape/ring, e.g., h-10 w-10 rounded-full).",
+            // Image
+            "AvatarImage[src]": 'string image URL (default: "").',
+            "AvatarImage[alt]": 'string alt text (default: "").',
+            "AvatarImage[asChild]": "boolean. Render custom tag (e.g., <picture>) as the image node (default: false).",
+            // Fallback
+            "AvatarFallback[label]": 'string fallback label when image not available (default: "Avatar fallback"). You can also provide children text (e.g., initials).',
+            "AvatarFallback[asChild]": "boolean. Render custom tag (e.g., <span>) as the fallback node (default: false).",
+        },
+        patterns: {
+            basic: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Avatar,
+  AvatarImage,
+  AvatarFallback
+};
+
+?>`,
+                html: `<div class="flex items-center gap-4">
+  <!-- Standard circular avatar -->
+  <Avatar class="h-10 w-10 rounded-full">
+    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+    <AvatarFallback>CN</AvatarFallback>
+  </Avatar>
+
+  <!-- Square/rounded avatar -->
+  <Avatar class="h-10 w-10 rounded-lg">
+    <AvatarImage src="https://github.com/evilrabbit.png" alt="@evilrabbit" />
+    <AvatarFallback>ER</AvatarFallback>
+  </Avatar>
+
+  <!-- Stacked group (container styles target child avatars) -->
+  <div class="*:data-[slot=avatar]:ring-background flex -space-x-2 *:data-[slot=avatar]:ring-2">
+    <Avatar class="h-9 w-9 rounded-full grayscale">
+      <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+      <AvatarFallback>CN</AvatarFallback>
+    </Avatar>
+    <Avatar class="h-9 w-9 rounded-full grayscale">
+      <AvatarImage src="https://github.com/leerob.png" alt="@leerob" />
+      <AvatarFallback>LR</AvatarFallback>
+    </Avatar>
+    <Avatar class="h-9 w-9 rounded-full grayscale">
+      <AvatarImage src="https://github.com/evilrabbit.png" alt="@evilrabbit" />
+      <AvatarFallback>ER</AvatarFallback>
+    </Avatar>
+  </div>
+</div>`,
+                notes: [
+                    "Purely presentational. When the image fails or is empty, the fallback shows.",
+                    "Size/shape with Tailwind on <Avatar> (e.g., h-10 w-10 rounded-full).",
+                    "Grouped/stacked layout is just container CSS; no special JS/state.",
+                ],
+            },
+            "as-child": {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Avatar,
+  AvatarImage,
+  AvatarFallback
+};
+
+?>`,
+                html: `<Avatar asChild="true" class="h-10 w-10 rounded-full ring-2 ring-background">
+  <a href="/profile/shadcn" aria-label="Open profile">
+    <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+    <AvatarFallback asChild="true">
+      <span>CN</span>
+    </AvatarFallback>
+  </a>
+</Avatar>`,
+                notes: [
+                    'Use asChild="true" on <Avatar> to make the whole avatar a link or button.',
+                    'Use asChild="true" on <AvatarFallback> to control the rendered tag (e.g., <span>).',
+                ],
+            },
+        },
+    };
+}
+function skeletonDoc(_tailwind) {
+    return {
+        name: "Skeleton",
+        requires: ["Skeleton"], // Button is only used in the optional 'controlled' demo
+        props: {
+            "Skeleton[class]": "Tailwind utilities to shape/size the shimmer block (e.g., h-4 w-[250px] rounded).",
+        },
+        patterns: {
+            basic: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Skeleton
+};
+
+?>`,
+                html: `<div class="flex items-center space-x-4">
+  <Skeleton class="h-12 w-12 rounded-full" />
+  <div class="space-y-2">
+    <Skeleton class="h-4 w-[250px]" />
+    <Skeleton class="h-4 w-[200px]" />
+  </div>
+</div>
+
+<div class="flex flex-col space-y-3">
+  <Skeleton class="h-[125px] w-[250px] rounded-xl" />
+  <div class="space-y-2">
+    <Skeleton class="h-4 w-[250px]" />
+    <Skeleton class="h-4 w-[200px]" />
+  </div>
+</div>`,
+                notes: [
+                    "Purely presentational shimmer blocks; no state or events.",
+                    "Match skeleton layout to the final content’s layout for a smoother transition.",
+                ],
+            },
+            controlled: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Skeleton,
+  Button
+};
+
+?>`,
+                html: `<div class="space-y-4">
+  <div class="flex items-center gap-2">
+    <Button size="sm" onclick="setLoading(true)">Show skeleton</Button>
+    <Button size="sm" variant="outline" onclick="setLoading(false)">Show content</Button>
+  </div>
+
+  <!-- While loading -->
+  <div pp-if="loading" class="flex items-center space-x-4">
+    <Skeleton class="h-12 w-12 rounded-full" />
+    <div class="space-y-2">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+    </div>
+  </div>
+
+  <!-- Loaded content (example only) -->
+  <div pp-else class="flex items-center gap-4">
+    <img src="https://github.com/shadcn.png" alt="@shadcn" class="h-12 w-12 rounded-full" />
+    <div>
+      <p class="font-medium leading-none">@shadcn</p>
+      <p class="text-sm text-muted-foreground">Design Systems</p>
+    </div>
+  </div>
+</div>`,
+                js: `<script>
+  // Primitive boolean state controls whether to show skeleton or content.
+  const [loading, setLoading] = pphp.state(true);
+
+  // Example auto-finish:
+  // setTimeout(() => setLoading(false), 1200);
+</script>`,
+                notes: [
+                    "Use app state to toggle skeletons while fetching data.",
+                    "Skeleton remains visual-only; swapping views is handled by pp-if.",
+                ],
+            },
+        },
+    };
+}
+function separatorDoc(_tailwind) {
+    return {
+        name: "Separator",
+        requires: ["Separator"],
+        props: {
+            "Separator[orientation]": 'one of "horizontal" | "vertical" (default: "horizontal")',
+            "Separator[asChild]": "boolean. When true, renders the child element as the separator.",
+            "Separator[class]": "Tailwind utilities to control spacing/thickness/length (e.g., my-4, h-px, w-px, h-4).",
+        },
+        patterns: {
+            basic: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Separator
+};
+
+?>`,
+                html: `<div>
+  <div class="space-y-1">
+    <h4 class="text-sm font-medium leading-none">Radix Primitives</h4>
+    <p class="text-sm text-muted-foreground">
+      An open-source UI component library.
+    </p>
+  </div>
+
+  <!-- Horizontal (default) -->
+  <Separator class="my-4" />
+
+  <!-- Verticals between inline items -->
+  <div class="flex h-5 items-center space-x-4 text-sm">
+    <div>Blog</div>
+    <Separator orientation="vertical" />
+    <div>Docs</div>
+    <Separator orientation="vertical" />
+    <div>Source</div>
+  </div>
+</div>`,
+                notes: [
+                    'Default is horizontal; no need to pass orientation="horizontal".',
+                    "Vertical separators inherit height from the container; adjust with h-* as needed.",
+                    "Pure presentation—no behavior or state.",
+                ],
+            },
+            "as-child": {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Separator
+};
+
+?>`,
+                html: `<!-- Custom tag/markup via asChild -->
+<Separator asChild="true" class="my-6">
+  <hr class="border-dashed" />
+</Separator>
+
+<div class="flex items-center text-sm">
+  <span>Item A</span>
+  <Separator asChild="true" orientation="vertical">
+    <span aria-hidden="true" class="mx-3 h-4 w-px bg-border"></span>
+  </Separator>
+  <span>Item B</span>
+</div>`,
+                notes: [
+                    'Use asChild="true" when you want to render a specific tag (e.g., <hr>) or fully custom node.',
+                    "Control thickness/length with w-px/h-px and container sizing.",
+                ],
+            },
+        },
+    };
+}
 export function getPhpXuiUsageDoc(nameRaw, tailwind) {
     const name = (nameRaw || "").trim().toLowerCase();
     if (name === "dialog")
@@ -1041,6 +1396,14 @@ export function getPhpXuiUsageDoc(nameRaw, tailwind) {
         return tableDoc(tailwind);
     if (name === "textarea")
         return textareaDoc(tailwind);
+    if (name === "alert")
+        return alertDoc(tailwind);
+    if (name === "avatar")
+        return avatarDoc(tailwind);
+    if (name === "skeleton")
+        return skeletonDoc(tailwind);
+    if (name === "separator")
+        return separatorDoc(tailwind);
     // Add more components here as you grow the catalog...
     return null;
 }
