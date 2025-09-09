@@ -161,6 +161,15 @@ function resolvePrismaPhpClass(libBaseAbs) {
         prismaClassExists: exists,
     };
 }
+function detectPHPXUI(root) {
+    const phpxuiConfigPath = path.join(root, "phpxui.json");
+    const hasPhpxuiConfig = fs.existsSync(phpxuiConfigPath);
+    return {
+        hasPhpxuiConfig,
+        phpxuiConfigPath: hasPhpxuiConfig ? "./phpxui.json" : null,
+        shadcnColorsAvailable: hasPhpxuiConfig, // PHPXUI = shadcn colors
+    };
+}
 /* ──────────────────────────────────────────────────────────── *
  *                       MCP Tool Export                        *
  * ──────────────────────────────────────────────────────────── */
@@ -187,6 +196,7 @@ export function registerDescribeConfig(server, ctx) {
         const excludes = Array.isArray(cfg.excludeFiles) ? cfg.excludeFiles : [];
         const { hasSwaggerScript } = readPackageJson(ctx.ROOT);
         const tailwind = detectTailwind(ctx.ROOT);
+        const phpxui = detectPHPXUI(ctx.ROOT);
         // ── Prisma detection & checks ───────────────────────────
         const prismaDeclared = !!cfg.prisma;
         const prismaMode = prismaDeclared ? "prisma" : "frontend-only";
@@ -233,6 +243,11 @@ export function registerDescribeConfig(server, ctx) {
                     hasV4Entrypoint: tailwind.hasV4Entrypoint,
                     v4EntrypointPath: `./${tailwind.v4EntrypointRel}`,
                 },
+                phpxui: {
+                    installed: phpxui.hasPhpxuiConfig,
+                    configPath: phpxui.phpxuiConfigPath,
+                    shadcnColorsAvailable: phpxui.shadcnColorsAvailable,
+                },
                 swaggerDocs: {
                     declared: !!cfg.swaggerDocs,
                     hasScript: hasSwaggerScript,
@@ -267,6 +282,10 @@ export function registerDescribeConfig(server, ctx) {
             if (!(tailwind.hasConfig || tailwind.hasBin)) {
                 summary.notes.push("TailwindCSS is enabled but no config file or CLI binary was found. In v4 a config is optional, but the CLI should be installed.");
             }
+        }
+        // ── PHPXUI notes ────────────────────────────────────────────────
+        if (phpxui.hasPhpxuiConfig) {
+            summary.notes.push("PHPXUI is installed → Use shadcn/ui color conventions (bg-background, text-foreground, etc.) for components and styling.");
         }
         // ── Swagger notes ─────────────────────────────────────────────────────
         if (cfg.swaggerDocs && !hasSwaggerScript) {

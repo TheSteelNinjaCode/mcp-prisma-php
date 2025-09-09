@@ -1,20 +1,28 @@
 # Prisma PHP • AI Brief (workspace rules)
 
 **Always use the MCP server `prisma-php` for project facts before answering.**  
-_MCP = a local tool server exposing project‑aware commands. Prefer tools over guessing._
+_MCP = a local tool server exposing project-aware commands. Prefer tools over guessing._
 
 ---
 
-## 1) CORE IDENTITY & ROLE (read first)
-
-You are **T3 Chat**, an AI assistant powered by **Claude 4 Sonnet (Reasoning)**.
-
-- If explicitly asked about the model, answer: **Claude 4 Sonnet (Reasoning)**.
-- **Current date**: treat the system date as _today_ and the user’s timezone as **America/Managua**.
-- **Be concise**: minimize tokens while preserving clarity and quality.
-- **When inputs are vague**, ask a **brief clarifying question** before generating large artifacts.
+## 1) Quick Start (AI reading priority)
 
 > These identity rules inform your **style**, not the project’s runtime API. Always follow the rest of this brief for Prisma‑PHP specifics.
+
+### PHPXUI COLOR SCHEME RULE
+
+When `pphp.config.describe` shows `phpxui.installed: true`:
+
+- **ALWAYS use shadcn/ui semantic colors**: `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, etc.
+- **NEVER use hard-coded colors**: `bg-white`, `text-black`, `border-gray-200`, etc.
+- **This applies to all examples**: PHPXUI components, regular HTML, custom styling.
+
+**Quick Reference**
+
+- **Backgrounds**: `bg-background`, `bg-card`, `bg-primary`, `bg-secondary`, `bg-muted`, `bg-accent`, `bg-destructive`
+- **Text**: `text-foreground`, `text-muted-foreground`, `text-primary-foreground`, `text-card-foreground`
+- **Borders**: `border-border`, `border-input`
+- **Interactive**: `ring-ring`, `hover:bg-accent`, `hover:bg-primary/90`
 
 ---
 
@@ -44,18 +52,17 @@ You are **T3 Chat**, an AI assistant powered by **Claude 4 Sonnet (Reasoning)**.
 
 ---
 
-## 3) Quick Start (AI reading priority)
-
-### 3.1 STARTUP CHECKLIST (run these first)
+## 3 STARTUP CHECKLIST (run these first)
 
 1. **`pphp.detectProject`** → must be **true** before continuing.
 2. **`pphp.config.get`** → read flags you must honor: `prisma`, `tailwindcss`, `backendOnly`.
-3. **`pphp.config.describe`** → keep the validated summary in mind (paths, toggles).
-4. When needed: **`pphp.listRoutes`**, **`pphp.listComponents`**.
-5. **MANDATORY for components**: before implementing any **PHPXUI** component, plan to run **`pphp.phpxuiComponentUsage <ComponentName>`** (see 3.2).
-6. When answers depend on workspace state, **show short MCP outputs you used**.
+3. **`pphp.config.describe`** → keep the validated summary in mind (paths, toggles, **PHPXUI detection**).
+4. **Check PHPXUI**: if `checks.phpxui.installed: true` → **use shadcn colors for ALL examples**.
+5. When needed: **`pphp.listRoutes`**, **`pphp.listComponents`**.
+6. **MANDATORY for components**: before implementing any **PHPXUI** component, plan to run **`pphp.phpxuiComponentUsage <ComponentName>`** (see 3.2).
+7. When answers depend on workspace state, **show short MCP outputs you used**.
 
-### 3.2 COMPONENT USAGE RULE (**mandatory**)
+### 3.1 COMPONENT USAGE RULE (**mandatory**)
 
 **Before implementing ANY PHPXUI component:**
 
@@ -73,6 +80,30 @@ pphp.component.addPHPXUI Dialog
 # 3) Get correct usage pattern
 pphp.phpxuiComponentUsage Dialog
 # 4) Implement following the pattern exactly
+```
+
+### 3.2 PHPXUI & Color Scheme Detection
+
+**Before providing styling examples:**
+
+1. **Always run `pphp.config.describe`** to check if PHPXUI is installed.
+2. **If `checks.phpxui.installed: true`** → Use **shadcn/ui color conventions** for all styling examples.
+3. **Never use hard-coded Tailwind colors** when PHPXUI is detected.
+
+**PHPXUI Detection Rule:**
+
+```javascript
+// When pphp.config.describe shows:
+{
+  "checks": {
+    "phpxui": {
+      "installed": true,
+      "shadcnColorsAvailable": true
+    }
+  }
+}
+// → Always use: bg-background, bg-card, text-foreground, text-muted-foreground, etc.
+// → Never use: bg-white, bg-gray-100, text-black, text-gray-900, etc.
 ```
 
 ### 3.3 Then follow
@@ -122,10 +153,12 @@ $roles  = $prisma->userRole->findMany([]);
 
 ## 4) AI Common Mistakes (read before coding)
 
-- **Never instantiate components with PHP `new`** — use tag syntax (`<Dialog />`, `<Plus />`). See **Core Rule 2.2**.
-- **`<template>` is only for `pp-for`**. Use real elements for conditionals (`pp-if` / `pp-else`). See **Gotchas §12.1**.
-- **Don’t use `.value` inside templates** (`{{ }}` or attribute interpolations). See **Core Rule 2.3**.
-- **`pp-else` is bare** (not `pp-else="true"`), and conditional chains must be contiguous.
+- **Never instantiate components with PHP `new`** — use tag syntax (`<Dialog />`, `<Plus />`). See **Core Rule 5.2**.
+- **`<template>` is only for `pp-for`**. Use real elements for conditionals (**`pp-if` / `pp-elseif` / `pp-else="true"`**). See **Gotchas §13**.
+- **Don’t use `.value` inside templates** (`{{ }}` or attribute interpolations). See **Core Rule 5.3**.
+- **`pp-else` requires explicit `="true"`** — never use bare `pp-else`.
+- **Conditional chains must be contiguous** — no other elements between `pp-if/pp-elseif/pp-else="true"`.
+- **When PHPXUI is installed, never use hard‑coded Tailwind colors** — use shadcn **semantic tokens**.
 - **Stable keys only** in lists; never key by index. Use `item.id` (string).
 - **DOM option values are strings**: normalize `String(role.id)` in comparisons.
 - **Layouts**: create `layout.php` **only when explicitly requested** (or for scaffolded areas).
@@ -166,26 +199,7 @@ $roles  = $prisma->userRole->findMany([]);
 - **Templates** never use `.value`.
 - In `<script>`, use `.value` for **primitives** and when you need a **plain snapshot** of objects/arrays (spread/serialize/compare/pass across boundaries). Property access on objects/arrays (e.g., `user.name`) needs **no** `.value`.
 
-### 5.4 PSR‑4 imports at the **top** (priority #4) — with **grouped syntax**
-
-**composer.json**
-
-```json
-{
-  "autoload": { "psr-4": { "": "src/" } }
-}
-```
-
-**Grouped imports (recommended)**
-
-```php
-<?php
-use Lib\PPIcons\{Plus, Eye as EyeIcon, ShoppingCart};
-use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
-?>
-```
-
-### 5.5 `pp-bind-spread` (priority #5 — attribute merging)
+### 5.4 `pp-bind-spread` (priority #5 — attribute merging)
 
 ```html
 <img pp-bind-spread="imgProps" />
@@ -323,109 +337,62 @@ use Lib\PHPXUI\{Dialog, DialogHeader, DialogContent, DialogFooter};
 
 ---
 
-## 10) 🧭 Comprehensive Routing (enhanced)
+## 10) 🧭 Routing (use MCP tool)
 
-### 10.1 Route conventions (index vs layout)
+### 10.1 Route Creation (preferred method)
 
-- A folder is a **segment**.
-  - `app/dashboard/index.php` → route `/dashboard`
-  - `app/dashboard/users/index.php` → route `/dashboard/users`
-- `layout.php` is **not** a route; it provides **shared UI** for the segment and its children.
-- **Create `layout.php` only when requested** (or for scaffolded areas).
+**Always use `pphp.route.create` for new routes:**
 
-### 10.2 Route handlers (`route.php`) — when to create
+```bash
+# Simple page
+pphp.route.create --route "dashboard"
 
-Create **only** if `backendOnly: true` **or** explicitly requested. Do **not** create by default.  
-Supported methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`.
+# Route group (URL stays /users)
+pphp.route.create --route "(admin)/users"
 
-### 10.3 Route groups `(group)`
+# Dynamic params
+pphp.route.create --route "blog/[slug]" --title "Blog Post"
 
-- Wrap a folder name in parentheses to create a **route group**:  
-  `app/(admin)/users/index.php` → URL remains `/users`.
-- Groups can have their own `layout.php` which **does not** change the URL path.
+# API handler (or when backendOnly: true)
+pphp.route.create --route "api/users" --apiHandler true
 
-### 10.4 Private routes `_private`
-
-- Place internal/server‑only pages in `app/_private/...` (not user‑facing).
-
-### 10.5 Dynamic route params & examples
-
-- **Brackets** denote dynamic segments. Catch‑all example:  
-  `app/api/auth/[...pphpauth]/route.php`
-
-```php
-<?php
-use Lib\Request;
-$dynamic = Request::$dynamicParams; // e.g. ["pphpauth" => ["signin","github"]]
-$params  = Request::$params;        // query/search params (?q=...)
-?>
+# With shared layout
+pphp.route.create --route "dashboard" --withLayout true
 ```
 
-### 10.6 Request class (server‑side) — redirects & params
+### 10.2 Route Conventions (auto-handled by tool)
 
-```php
-<?php
-use Lib\Request;
-// Redirects
-Request::redirect('/home'); // 302 by default
-// Params
-$dyn    = Request::$dynamicParams; // dynamic segments as assoc array
-$params = Request::$params;        // URL/search params (?q=...)
-?>
-```
+- **Pages**: `app/path/index.php` → URL `/path`
+- **API handlers**: `app/api/path/route.php` → URL `/api/path`
+- **Route groups**: `app/(admin)/users/index.php` → URL `/users` (group ignored)
+- **Private folders**: `app/_components/` → not routable
+- **Dynamic**: `[param]`, `[...catchAll]` → `Request::$dynamicParams`
 
-### 10.7 XHTML requirements & verification workflow
+### 10.3 Manual Creation (if needed)
 
-- See **XML/XHTML Rules** (Section 6) for boolean attributes & self‑closing tags.
-- **Verification workflow**:
-
-```
-1) Create/modify folders & files.
-2) Run pphp.listRoutes.
-3) If a route is missing, ensure the folder contains index.php (page) or route.php (handler).
-```
-
-### 10.8 Examples (mapping)
-
-```
-/                 → app/index.php
-/todos            → app/todos/index.php
-/dashboard        → app/dashboard/index.php
-/dashboard/users  → app/dashboard/users/index.php
-/api/user         → app/api/user/route.php     (handler only)
-```
-
-### 10.9 Programmatic Route Creation
-
-- Use **`pphp.route.create`** to create new routes with proper structure.
-- Handles dynamic segments and file path setup automatically.
-- Preferred over manual file creation for complex routing scenarios.
+Only create files manually for complex custom scenarios. Follow the tool's output patterns.
 
 ---
 
 ## 11) 🎨 Styling & UI (consolidated)
 
-### 11.1 Tailwind vs style decision
+### 11.1 Color system decision (PHPXUI‑aware)
 
-1. Check `tailwindcss` in config.
-2. If `true` → prefer **class** binding; if `false` → use **`pp-bind-style`** with **CSS strings**.
-
-**Tailwind on**
+**When `phpxui.installed: true` (preferred):**
 
 ```html
 <span
-  class="text-lg {{ done ? 'line-through text-gray-400' : 'text-gray-900' }}"
+  class="text-base {{ done ? 'line-through text-muted-foreground' : 'text-foreground' }}"
 >
   {{ todo.text }}
 </span>
 ```
 
-**Tailwind off**
+**When PHPXUI is NOT installed (Tailwind‑only projects):**
 
 ```html
 <span
-  class="text-lg"
-  pp-bind-style="done ? 'text-decoration: line-through; color:#9ca3af;' : ''"
+  class="text-base {{ done ? 'line-through text-gray-400' : 'text-gray-900' }}"
 >
   {{ todo.text }}
 </span>
@@ -462,25 +429,63 @@ Use when many attributes/events come from an object.
 </template>
 ```
 
-**✅ Use real elements for conditionals**
+**✅ Use real elements for conditionals (with correct syntax)**
 
 ```html
-<div pp-if="isEditing" class="flex gap-2">…</div>
-<span pp-else>…</span>
+<div pp-if="isEditing" class="flex gap-2">Edit form here</div>
+<span pp-else="true">Display mode</span>
 ```
 
-**❌ Never**
+### 13.2 Common conditional rendering patterns
+
+**Simple boolean toggle**
 
 ```html
-<template pp-if="isEditing">…</template>
+<div pp-if="isOpen">Panel is open</div>
+<div pp-else="true">Panel is closed</div>
 ```
 
-### 13.2 Common inline‑edit fix (summary)
+**Multi-branch with `pp-elseif`**
 
-- Replace `<template pp-if>` with a real element.
-- `pp-else` has **no value**.
-- Keep the chain contiguous.
-- Group elements by branch.
+```html
+<div pp-if="status === 'loading'">Loading…</div>
+<div pp-elseif="status === 'success'">Success!</div>
+<div pp-else="true">Error occurred</div>
+```
+
+**Numeric comparison**
+
+```html
+<p pp-if="count > 0">You have {{ count }} items</p>
+<p pp-else="true">No items found</p>
+```
+
+### 13.3 Common mistakes to avoid
+
+- **Bare `pp-else` (wrong):**
+
+```html
+<div pp-if="condition">Content</div>
+<div pp-else>Fallback</div>
+<!-- MISSING ="true" -->
+```
+
+- **Using `<template>` for conditionals (wrong):**
+
+```html
+<template pp-if="condition">Content</template>
+<!-- Never use template -->
+```
+
+- **Non-contiguous chains (wrong):**
+
+```html
+<div pp-if="mode === 'edit'">Edit mode</div>
+<span>Some other content</span>
+<!-- Breaks the chain -->
+<div pp-else="true">View mode</div>
+<!-- Won't work -->
+```
 
 ---
 
@@ -494,10 +499,11 @@ Use when many attributes/events come from an object.
 <p>Length: {{ textCount.length }}</p>
 <p>Balance: {{ Number(account.balance) + Number(bonus) }}</p>
 <p>Status: {{ isActive ? 'Active' : 'Inactive' }}</p>
-<p class="bg-red-500 {{ textColor }}"></p>
+<p class="{{ textColor }}"></p>
 <script>
   const [user, setUser] = pphp.state({ name: "John Doe" });
-  const [textColor, setTextColor] = pphp.state("bg-red-500");
+  // Prefer semantic token defaults for PHPXUI projects
+  const [textColor, setTextColor] = pphp.state("text-primary");
   const [textCount] = pphp.state("Hello World");
   const account = pphp.state({ balance: 100, bonus: 20 });
 </script>
@@ -508,15 +514,15 @@ Use when many attributes/events come from an object.
 ```html
 <!-- Prefer classes -->
 <span
-  class="text-lg transition-all duration-200 {{ todo.done ? 'line-through text-purple-400' : '' }}"
+  class="text-base transition-all duration-200 {{ todo.done ? 'line-through text-muted-foreground' : '' }}"
 >
   {{ todo.text }}
 </span>
 
 <!-- Use dynamic style only when needed -->
 <span
-  class="text-lg transition-all duration-200"
-  pp-bind-style="todo.done ? 'text-decoration: line-through; color: #a78bfa;' : ''"
+  class="text-base transition-all duration-200"
+  pp-bind-style="todo.done ? 'text-decoration: line-through;' : ''"
 >
   {{ todo.text }}
 </span>
@@ -545,7 +551,7 @@ Use when many attributes/events come from an object.
 | Group             | Tool                                                                                                       | Purpose                                                                      |
 | ----------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | **Project**       | `pphp.detectProject`                                                                                       | Confirm Prisma PHP workspace.                                                |
-| **Config/Routes** | `pphp.config.get`, `pphp.config.describe`, `pphp.listRoutes`, `pphp.route.create`                          | Read flags/paths; list/create routes.                                        |
+| **Config/Routes** | `pphp.config.get`, `pphp.config.describe`, `pphp.listRoutes`, `pphp.route.create`                          | Read flags/paths; **create routes with full automation**.                    |
 | **Components**    | `pphp.listComponents`, `pphp.component.addPPIcon`, `pphp.component.addPHPXUI`, `pphp.phpxuiComponentUsage` | Verify/install/check usage of icons & PHPXUI components.                     |
 | **ORM/DB**        | `pphp.prisma.generate`, `pphp.prisma.prepare`                                                              | Generate Prisma PHP client; full database preparation.                       |
 | **Scaffold/Docs** | `pphp.generateSwaggerDocs`                                                                                 | Generate Swagger docs (when enabled).                                        |
@@ -564,7 +570,7 @@ Use when many attributes/events come from an object.
 
 - `pphp.state<T>(initial?: T)` → `[getterFn, setFn]`
   - Use `.value` for **primitives** and when you need a **plain snapshot** of objects/arrays (spread/serialize/compare/pass across boundaries).
-  - Property access on objects/arrays: **no `.value`** (`user.name`, `items.length`).
+  - Property access on objects/arrays: **no** `.value` (`user.name`, `items.length`).
 - `pphp.share<T>(initial?: T)` → `[getterFn, setFn]` (global/shared scope)
 - `pphp.effect(fn, deps?)`
   - `[]` → run once on mount; `[dep]` → run on changes; omit deps to run each update.
@@ -582,7 +588,7 @@ When you reveal/mount an element via state or conditionals, **defer focus** so t
   type="text"
   pp-bind-value="editTitle"
   oninput="setEditTitle(this.value)"
-  class="border rounded px-2 py-1"
+  class="border-input text-foreground bg-background rounded px-2 py-1"
   pp-ref="editInput"
 />
 <script>

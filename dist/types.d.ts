@@ -19,6 +19,10 @@ export interface PrismaPhpConfig {
         cli?: string;
         root?: string;
     };
+    phpxui?: boolean | {
+        shadcnColors?: boolean;
+        componentPath?: string;
+    };
     [k: string]: unknown;
 }
 export interface Ctx {
