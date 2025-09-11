@@ -62,13 +62,33 @@ When `pphp.config.describe` shows `phpxui.installed: true`:
 6. **MANDATORY for components**: before implementing any **PHPXUI** component, plan to run **`pphp.phpxuiComponentUsage <ComponentName>`** (see 3.2).
 7. When answers depend on workspace state, **show short MCP outputs you used**.
 
-### 3.1 COMPONENT USAGE RULE (**mandatory**)
+### 3.1 PHPXUI Component Authority Rule (**MANDATORY**)
 
-**Before implementing ANY PHPXUI component:**
+**🚨 ALWAYS use `pphp.phpxuiComponentUsage <ComponentName>` before implementing ANY PHPXUI component**
 
-1. **Always run `pphp.phpxuiComponentUsage <ComponentName>`** to get the correct implementation pattern.
-2. **Follow the exact props and structure** shown in the usage guide.
-3. **Never guess component APIs** — the usage tool provides authoritative examples.
+1. **Run the usage tool FIRST** - this gives you the current API
+2. **Follow the EXACT patterns** - props, events, structure, everything
+3. **Show the MCP output** in your response for transparency
+4. **Component APIs evolve** - the usage tool always reflects the latest improvements
+
+**Why this matters:**
+
+- Components like ToggleSwitch and Checkbox now support `pp-bind-checked`
+- Event handlers are component-specific (`onclick` vs `onchange`)
+- Structure matters (correct nesting for Table components)
+- New features are added regularly
+
+**Example workflow:**
+
+```bash
+# 1. Always check current API first
+pphp.phpxuiComponentUsage ToggleSwitch
+
+# 2. Output shows latest patterns (e.g., pp-bind-checked support)
+# 3. Use EXACTLY what the tool shows - no guessing
+```
+
+**The usage tool is the single source of truth for all PHPXUI component APIs.**
 
 **Example workflow:**
 
@@ -163,14 +183,50 @@ $roles  = $prisma->userRole->findMany([]);
 - **DOM option values are strings**: normalize `String(role.id)` in comparisons.
 - **Layouts**: create `layout.php` **only when explicitly requested** (or for scaffolded areas).
 
+### 4.1 PHPXUI Component Event Rules
+
+**CRITICAL: Each PHPXUI component has specific event handlers - never assume generic patterns**
+
+**❌ Common mistakes:**
+
+```html
+<!-- Wrong: using onchange instead of onclick -->
+<ToggleSwitch pp-bind-checked="active" onchange="setActive(!active)" />
+<Checkbox pp-bind-checked="selected" onchange="setSelected(!selected)" />
+
+<!-- Wrong: missing pp-bind- prefix for modern binding -->
+<ToggleSwitch checked="active" onclick="setActive(!active)" />
+<!-- ^ This still works but pp-bind-checked is preferred -->
+```
+
+**✅ Correct modern patterns:**
+
+```html
+<!-- Correct: pp-bind-checked + onclick -->
+<ToggleSwitch pp-bind-checked="active" onclick="setActive(!active)" />
+<Checkbox pp-bind-checked="selected" onclick="setSelected(!selected)" />
+```
+
+**RULE: Always use `onclick` for ToggleSwitch and Checkbox - NEVER `onchange`**
+
 ---
 
 ## 5) Core Rules
 
-### 5.1 File order (priority #1) — with visuals
+### 5.1 Component API Authority (priority #1)
 
-- Always: PHP imports + server data → HTML → **one** `<script>` at the **bottom**.
-- Never place `<script>` before markup. (Examples in Quick Start.)
+- **MANDATORY**: Use `pphp.phpxuiComponentUsage <ComponentName>` before any PHPXUI component
+- **Follow exact patterns**: The tool shows current API including latest improvements
+- **Modern bindings**: Components now support `pp-bind-checked` with `onclick` handlers
+- **Never assume**: APIs evolve - the usage tool is always current
+
+**Example patterns (from usage tool):**
+
+```html
+<!-- Modern controlled pattern -->
+<ToggleSwitch pp-bind-checked="isActive" onclick="setIsActive(!isActive)" />
+<Checkbox pp-bind-checked="selected" onclick="setSelected(!selected)" />
+```
 
 ### 5.2 Component usage (priority #2) — **Tag syntax only**
 

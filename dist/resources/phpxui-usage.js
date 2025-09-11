@@ -481,6 +481,7 @@ function toggleSwitchDoc(_tailwind) {
         requires: ["ToggleSwitch"],
         props: {
             "ToggleSwitch[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
+            "ToggleSwitch[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onclick handler for state updates.",
             "ToggleSwitch[asChild]": "boolean. When true, renders the child element as the switch root.",
         },
         patterns: {
@@ -523,16 +524,18 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" checked="isActive" onclick="setIsActive(!isActive)" />
+  <ToggleSwitch id="user-is-active" pp-bind-checked="isActive" onclick="setIsActive(!isActive)" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 js: `<script>
-  // Controlled: pass the state var name and flip it on click.
+  // Modern controlled approach with pp-bind-checked + onclick
   const [isActive, setIsActive] = pphp.state(false);
 </script>`,
                 notes: [
-                    'Controlled usage: checked="isActive" + onclick="setIsActive(!isActive)".',
-                    "The component no longer auto-syncs state; you must update it in the handler.",
+                    'Modern controlled: pp-bind-checked="isActive" + onclick="setIsActive(!isActive)".',
+                    "pp-bind-checked automatically syncs the visual state with your state variable.",
+                    "You must still provide onclick handler to update the state.",
+                    "❌ NEVER use onchange - always use onclick for ToggleSwitch.",
                 ],
             },
             "as-child": {
@@ -550,7 +553,7 @@ use Lib\\PHPXUI\\{
 </ToggleSwitch>`,
                 notes: [
                     'When asChild="true", the child element receives the switch behavior & accessibility.',
-                    "Independent of controlled/uncontrolled.",
+                    "Can be combined with pp-bind-checked for controlled behavior.",
                 ],
             },
         },
@@ -1375,7 +1378,8 @@ function checkboxDoc(_tailwind) {
         name: "Checkbox",
         requires: ["Checkbox", "Label"],
         props: {
-            "Checkbox[checked]": 'true | false | string (state var name). Default: false. When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
+            "Checkbox[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
+            "Checkbox[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onclick handler for state updates.",
             "Checkbox[id]": "string. Pair with Label[for] for accessibility.",
             "Checkbox[disabled]": 'boolean (e.g., disabled="true").',
             "Checkbox[required]": 'boolean (e.g., required="true").',
@@ -1440,16 +1444,18 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-3">
-  <Checkbox id="is-active" checked="isActive" onclick="setIsActive(!isActive)" />
+  <Checkbox id="is-active" pp-bind-checked="isActive" onclick="setIsActive(!isActive)" />
   <Label for="is-active">Active</Label>
 </div>`,
                 js: `<script>
-  // Controlled: pass the state var name and flip it on click.
+  // Modern controlled approach with pp-bind-checked + onclick
   const [isActive, setIsActive] = pphp.state(false);
 </script>`,
                 notes: [
-                    'Controlled usage: checked="isActive" + onclick="setIsActive(!isActive)".',
-                    "The component no longer auto-syncs state; you must update it in the handler.",
+                    'Modern controlled: pp-bind-checked="isActive" + onclick="setIsActive(!isActive)".',
+                    "pp-bind-checked automatically syncs the visual state with your state variable.",
+                    "You must still provide onclick handler to update the state.",
+                    "❌ NEVER use onchange - always use onclick for Checkbox.",
                 ],
             },
             "as-child": {
@@ -1466,6 +1472,7 @@ use Lib\\PHPXUI\\{
                 notes: [
                     'Use asChild="true" when you need a specific tag/structure for the root (e.g., <button>).',
                     "Accessibility attributes are forwarded; keep size/shape via Tailwind.",
+                    "Can be combined with pp-bind-checked for controlled behavior.",
                 ],
             },
         },
