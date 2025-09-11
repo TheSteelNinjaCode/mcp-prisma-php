@@ -480,7 +480,7 @@ function toggleSwitchDoc(_tailwind) {
         name: "ToggleSwitch",
         requires: ["ToggleSwitch"],
         props: {
-            "ToggleSwitch[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), the switch is two-way bound and updates the state automatically — no extra event listeners required.',
+            "ToggleSwitch[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
             "ToggleSwitch[asChild]": "boolean. When true, renders the child element as the switch root.",
         },
         patterns: {
@@ -523,18 +523,16 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" checked="isActive" />
+  <ToggleSwitch id="user-is-active" checked="isActive" onclick="setIsActive(!isActive)" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 js: `<script>
-  // Controlled: the component manages events internally and keeps "isActive" in sync.
-  // DO NOT add onchange/onclick handlers here.
+  // Controlled: pass the state var name and flip it on click.
   const [isActive, setIsActive] = pphp.state(false);
 </script>`,
                 notes: [
-                    'Controlled usage: pass the state var name as a string, e.g., checked="isActive".',
-                    "Two-way binding is built-in — do NOT add oninput/onchange/onclick listeners.",
-                    "The switch will update the bound state automatically.",
+                    'Controlled usage: checked="isActive" + onclick="setIsActive(!isActive)".',
+                    "The component no longer auto-syncs state; you must update it in the handler.",
                 ],
             },
             "as-child": {
@@ -552,7 +550,7 @@ use Lib\\PHPXUI\\{
 </ToggleSwitch>`,
                 notes: [
                     'When asChild="true", the child element receives the switch behavior & accessibility.',
-                    "This pattern is independent of controlled/uncontrolled.",
+                    "Independent of controlled/uncontrolled.",
                 ],
             },
         },
@@ -1372,6 +1370,107 @@ use Lib\\PHPXUI\\{
         },
     };
 }
+function checkboxDoc(_tailwind) {
+    return {
+        name: "Checkbox",
+        requires: ["Checkbox", "Label"],
+        props: {
+            "Checkbox[checked]": 'true | false | string (state var name). Default: false. When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
+            "Checkbox[id]": "string. Pair with Label[for] for accessibility.",
+            "Checkbox[disabled]": 'boolean (e.g., disabled="true").',
+            "Checkbox[required]": 'boolean (e.g., required="true").',
+            "Checkbox[asChild]": "boolean. When true, renders the child element as the checkbox root (default: false).",
+            "Checkbox[class]": "Tailwind utilities. Supports selectors like [aria-checked] and data-[state=checked|unchecked].",
+        },
+        patterns: {
+            basic: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Checkbox,
+  Label
+};
+
+?>`,
+                html: `<div class="flex flex-col gap-6">
+  <div class="flex items-center gap-3">
+    <Checkbox id="terms" />
+    <Label for="terms">Accept terms and conditions</Label>
+  </div>
+
+  <div class="flex items-start gap-3">
+    <Checkbox id="terms-2" checked="true" />
+    <div class="grid gap-2">
+      <Label for="terms-2">Accept terms and conditions</Label>
+      <p class="text-muted-foreground text-sm">
+        By clicking this checkbox, you agree to the terms and conditions.
+      </p>
+    </div>
+  </div>
+
+  <div class="flex items-start gap-3">
+    <Checkbox id="toggle" disabled="true" />
+    <Label for="toggle">Enable notifications</Label>
+  </div>
+
+  <Label class="hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+    <Checkbox
+      id="toggle-2"
+      checked="true"
+      class="data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600 data-[state=checked]:text-white dark:data-[state=checked]:border-blue-700 dark:data-[state=checked]:bg-blue-700" />
+    <div class="grid gap-1.5 font-normal">
+      <p class="text-sm leading-none font-medium">Enable notifications</p>
+      <p class="text-muted-foreground text-sm">You can enable or disable notifications at any time.</p>
+    </div>
+  </Label>
+</div>`,
+                notes: [
+                    "Uncontrolled by default (unchecked). No JS state required.",
+                    'Pair with <Label for="…"> using a matching Checkbox[id].',
+                    "Style via [aria-checked] or data-[state] selectors.",
+                ],
+            },
+            controlled: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Checkbox,
+  Label
+};
+
+?>`,
+                html: `<div class="flex items-center gap-3">
+  <Checkbox id="is-active" checked="isActive" onclick="setIsActive(!isActive)" />
+  <Label for="is-active">Active</Label>
+</div>`,
+                js: `<script>
+  // Controlled: pass the state var name and flip it on click.
+  const [isActive, setIsActive] = pphp.state(false);
+</script>`,
+                notes: [
+                    'Controlled usage: checked="isActive" + onclick="setIsActive(!isActive)".',
+                    "The component no longer auto-syncs state; you must update it in the handler.",
+                ],
+            },
+            "as-child": {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Checkbox
+};
+
+?>`,
+                html: `<Checkbox asChild="true" class="inline-flex h-5 w-5 items-center justify-center rounded border">
+  <button type="button" aria-label="Toggle option"></button>
+</Checkbox>`,
+                notes: [
+                    'Use asChild="true" when you need a specific tag/structure for the root (e.g., <button>).',
+                    "Accessibility attributes are forwarded; keep size/shape via Tailwind.",
+                ],
+            },
+        },
+    };
+}
 export function getPhpXuiUsageDoc(nameRaw, tailwind) {
     const name = (nameRaw || "").trim().toLowerCase();
     if (name === "dialog")
@@ -1404,6 +1503,8 @@ export function getPhpXuiUsageDoc(nameRaw, tailwind) {
         return skeletonDoc(tailwind);
     if (name === "separator")
         return separatorDoc(tailwind);
+    if (name === "checkbox")
+        return checkboxDoc(tailwind);
     // Add more components here as you grow the catalog...
     return null;
 }
