@@ -480,8 +480,12 @@ function toggleSwitchDoc(_tailwind) {
         name: "ToggleSwitch",
         requires: ["ToggleSwitch"],
         props: {
-            "ToggleSwitch[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
-            "ToggleSwitch[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onclick handler for state updates.",
+            "ToggleSwitch[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onchange (e.g., onchange="setIsActive(!isActive)").',
+            "ToggleSwitch[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onchange handler for state updates.",
+            "ToggleSwitch[name]": "string. Form field name for form submissions.",
+            "ToggleSwitch[value]": "string. Value when checked (default: 'on').",
+            "ToggleSwitch[disabled]": 'boolean (e.g., disabled="true").',
+            "ToggleSwitch[required]": 'boolean (e.g., required="true").',
             "ToggleSwitch[asChild]": "boolean. When true, renders the child element as the switch root.",
         },
         patterns: {
@@ -494,7 +498,11 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<ToggleSwitch />`,
-                notes: ["Uncontrolled; default is unchecked.", "No JS state required."],
+                notes: [
+                    "Uncontrolled; default is unchecked.",
+                    "No JS state required.",
+                    "Behaves like a standard HTML checkbox input.",
+                ],
             },
             "default-checked": {
                 phpUse: `<?php
@@ -506,12 +514,13 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" checked="true" />
+  <ToggleSwitch id="user-is-active" name="isActive" checked="true" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 notes: [
                     'Use checked="true" to render checked by default (still uncontrolled).',
                     "No JS state required.",
+                    "Include name attribute for form submissions.",
                 ],
             },
             controlled: {
@@ -524,18 +533,17 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" pp-bind-checked="isActive" onclick="setIsActive(!isActive)" />
+  <ToggleSwitch id="user-is-active" name="isActive" pp-bind-checked="isActive" onchange="setIsActive(!isActive)" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 js: `<script>
-  // Modern controlled approach with pp-bind-checked + onclick
+  // Controlled approach - toggle the current state
   const [isActive, setIsActive] = pphp.state(false);
 </script>`,
                 notes: [
-                    'Modern controlled: pp-bind-checked="isActive" + onclick="setIsActive(!isActive)".',
-                    "pp-bind-checked automatically syncs the visual state with your state variable.",
-                    "You must still provide onclick handler to update the state.",
-                    "❌ NEVER use onchange - always use onclick for ToggleSwitch.",
+                    'Controlled: pp-bind-checked="isActive" + onchange="setIsActive(!isActive)".',
+                    "Toggle pattern: !isActive flips the current state on each change.",
+                    "Follows standard HTML input conventions with toggle behavior.",
                 ],
             },
             "as-child": {
@@ -553,7 +561,7 @@ use Lib\\PHPXUI\\{
 </ToggleSwitch>`,
                 notes: [
                     'When asChild="true", the child element receives the switch behavior & accessibility.',
-                    "Can be combined with pp-bind-checked for controlled behavior.",
+                    "Standard toggle pattern still applies with asChild.",
                 ],
             },
         },
@@ -854,9 +862,12 @@ function tableDoc(_tailwind) {
         ],
         props: {
             "Table[class]": "Tailwind classes on the table element.",
-            "TableHead[class]": "Utility classes for header cells.",
-            "TableCell[class]": "Utility classes for body/footer cells.",
-            "TableRow[class]": "Utility classes per row.",
+            "TableHead[class]": "Utility classes for HEADER CELLS (inside TableRow).",
+            "TableCell[class]": "Utility classes for BODY/FOOTER CELLS (inside TableRow).",
+            "TableRow[class]": "Utility classes per row (inside TableHeader/TableBody/TableFooter).",
+            "TableHeader[class]": "Utility classes for HEADER CONTAINER (contains TableRows).",
+            "TableBody[class]": "Utility classes for BODY CONTAINER (contains TableRows).",
+            "TableFooter[class]": "Utility classes for FOOTER CONTAINER (contains TableRows).",
             "TableCaption[class]": "Utility classes for caption.",
             "TableCell[colspan]": 'Number of columns to span (e.g., colspan="3").',
         },
@@ -879,8 +890,10 @@ use Lib\\PHPXUI\\{
                 html: `<Table>
   <TableCaption>A list of your recent invoices.</TableCaption>
 
+  <!-- CONTAINER for header rows -->
   <TableHeader>
     <TableRow>
+      <!-- CELLS inside the row -->
       <TableHead class="w-[100px]">Invoice</TableHead>
       <TableHead>Status</TableHead>
       <TableHead>Method</TableHead>
@@ -888,9 +901,11 @@ use Lib\\PHPXUI\\{
     </TableRow>
   </TableHeader>
 
+  <!-- CONTAINER for body rows -->
   <TableBody>
     <template pp-for="(invoice, idx) in invoices">
       <TableRow>
+        <!-- CELLS inside the row -->
         <TableCell class="font-medium">{{ invoice.invoice }}</TableCell>
         <TableCell>{{ invoice.paymentStatus }}</TableCell>
         <TableCell>{{ invoice.paymentMethod }}</TableCell>
@@ -899,8 +914,10 @@ use Lib\\PHPXUI\\{
     </template>
   </TableBody>
 
+  <!-- CONTAINER for footer rows -->
   <TableFooter>
     <TableRow>
+      <!-- CELLS inside the row -->
       <TableCell colspan="3">Total</TableCell>
       <TableCell class="text-right">$2,500.00</TableCell>
     </TableRow>
@@ -923,6 +940,12 @@ use Lib\\PHPXUI\\{
   // invoices[1].paymentStatus = 'Paid';
 </script>`,
                 notes: [
+                    "🚨 CRITICAL STRUCTURE: TableHeader (container) → TableRow → TableHead (cells)",
+                    "🚨 NEVER: TableHead (container) → TableRow → TableHeader (cells) ← THIS IS WRONG",
+                    "Structure: Table → [TableCaption] → TableHeader/TableBody/TableFooter → TableRow → TableHead/TableCell",
+                    "Containers: TableHeader, TableBody, TableFooter (contain rows)",
+                    "Cells: TableHead (header cells), TableCell (body/footer cells)",
+                    "Use TableFooter for summaries; set colspan via TableCell[colspan].",
                     "Purely presentational; no internal sorting, pagination, or selection.",
                     "Render rows with pp-for. Arrays/objects are reactive directly (no .value).",
                     "Use Tailwind utilities on subcomponents (e.g., .text-right, width classes).",
@@ -1378,9 +1401,11 @@ function checkboxDoc(_tailwind) {
         name: "Checkbox",
         requires: ["Checkbox", "Label"],
         props: {
-            "Checkbox[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onclick (e.g., onclick="setIsActive(!isActive)").',
-            "Checkbox[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onclick handler for state updates.",
+            "Checkbox[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onchange (e.g., onchange="setIsActive(!isActive)").',
+            "Checkbox[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onchange handler for state updates.",
             "Checkbox[id]": "string. Pair with Label[for] for accessibility.",
+            "Checkbox[name]": "string. Form field name for form submissions.",
+            "Checkbox[value]": "string. Value when checked (default: 'on').",
             "Checkbox[disabled]": 'boolean (e.g., disabled="true").',
             "Checkbox[required]": 'boolean (e.g., required="true").',
             "Checkbox[asChild]": "boolean. When true, renders the child element as the checkbox root (default: false).",
@@ -1398,12 +1423,12 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<div class="flex flex-col gap-6">
   <div class="flex items-center gap-3">
-    <Checkbox id="terms" />
+    <Checkbox id="terms" name="terms" />
     <Label for="terms">Accept terms and conditions</Label>
   </div>
 
   <div class="flex items-start gap-3">
-    <Checkbox id="terms-2" checked="true" />
+    <Checkbox id="terms-2" name="terms2" checked="true" />
     <div class="grid gap-2">
       <Label for="terms-2">Accept terms and conditions</Label>
       <p class="text-muted-foreground text-sm">
@@ -1413,7 +1438,7 @@ use Lib\\PHPXUI\\{
   </div>
 
   <div class="flex items-start gap-3">
-    <Checkbox id="toggle" disabled="true" />
+    <Checkbox id="toggle" name="notifications" disabled="true" />
     <Label for="toggle">Enable notifications</Label>
   </div>
 
@@ -1431,7 +1456,8 @@ use Lib\\PHPXUI\\{
                 notes: [
                     "Uncontrolled by default (unchecked). No JS state required.",
                     'Pair with <Label for="…"> using a matching Checkbox[id].',
-                    "Style via [aria-checked] or data-[state] selectors.",
+                    "Include name attribute for form submissions.",
+                    "Behaves like a standard HTML checkbox input.",
                 ],
             },
             controlled: {
@@ -1444,18 +1470,17 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-3">
-  <Checkbox id="is-active" pp-bind-checked="isActive" onclick="setIsActive(!isActive)" />
+  <Checkbox id="is-active" name="isActive" pp-bind-checked="isActive" onchange="setIsActive(!isActive)" />
   <Label for="is-active">Active</Label>
 </div>`,
                 js: `<script>
-  // Modern controlled approach with pp-bind-checked + onclick
+  // Controlled approach - toggle the current state
   const [isActive, setIsActive] = pphp.state(false);
 </script>`,
                 notes: [
-                    'Modern controlled: pp-bind-checked="isActive" + onclick="setIsActive(!isActive)".',
-                    "pp-bind-checked automatically syncs the visual state with your state variable.",
-                    "You must still provide onclick handler to update the state.",
-                    "❌ NEVER use onchange - always use onclick for Checkbox.",
+                    'Controlled: pp-bind-checked="isActive" + onchange="setIsActive(!isActive)".',
+                    "Toggle pattern: !isActive flips the current state on each change.",
+                    "Follows standard HTML input conventions with toggle behavior.",
                 ],
             },
             "as-child": {
@@ -1472,7 +1497,7 @@ use Lib\\PHPXUI\\{
                 notes: [
                     'Use asChild="true" when you need a specific tag/structure for the root (e.g., <button>).',
                     "Accessibility attributes are forwarded; keep size/shape via Tailwind.",
-                    "Can be combined with pp-bind-checked for controlled behavior.",
+                    "Standard toggle pattern still applies with asChild.",
                 ],
             },
         },

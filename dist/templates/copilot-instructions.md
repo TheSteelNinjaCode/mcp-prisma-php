@@ -62,33 +62,34 @@ When `pphp.config.describe` shows `phpxui.installed: true`:
 6. **MANDATORY for components**: before implementing any **PHPXUI** component, plan to run **`pphp.phpxuiComponentUsage <ComponentName>`** (see 3.2).
 7. When answers depend on workspace state, **show short MCP outputs you used**.
 
-### 3.1 PHPXUI Component Authority Rule (**MANDATORY**)
+### 3.1 COMPONENT USAGE RULE (**MANDATORY - ZERO TOLERANCE**)
 
-**🚨 ALWAYS use `pphp.phpxuiComponentUsage <ComponentName>` before implementing ANY PHPXUI component**
+**🚨 CRITICAL: Before implementing ANY PHPXUI component:**
 
-1. **Run the usage tool FIRST** - this gives you the current API
-2. **Follow the EXACT patterns** - props, events, structure, everything
-3. **Show the MCP output** in your response for transparency
-4. **Component APIs evolve** - the usage tool always reflects the latest improvements
+1. **ALWAYS run `pphp.phpxuiComponentUsage <ComponentName>`** - NO EXCEPTIONS
+2. **Show the MCP output** in your response for transparency
+3. **Copy the exact structure** - props, nesting, everything
+4. **Validate structure** - check container vs cell relationships
+5. **Never adapt or "improve"** the patterns shown
 
-**Why this matters:**
+**Structural Validation Checklist:**
 
-- Components like ToggleSwitch and Checkbox now support `pp-bind-checked`
-- Event handlers are component-specific (`onclick` vs `onchange`)
-- Structure matters (correct nesting for Table components)
-- New features are added regularly
+- ✅ Correct component nesting (container → row → cell)
+- ✅ Correct prop names and values
+- ✅ Correct event handlers
+- ✅ All required components imported
 
-**Example workflow:**
+**Example Workflow (MANDATORY):**
 
 ```bash
-# 1. Always check current API first
-pphp.phpxuiComponentUsage ToggleSwitch
-
-# 2. Output shows latest patterns (e.g., pp-bind-checked support)
-# 3. Use EXACTLY what the tool shows - no guessing
+# 1. ALWAYS check usage first
+pphp.phpxuiComponentUsage Table
+# 2. Copy EXACT structure from output
+# 3. Verify container/cell relationships
+# 4. Never guess or adapt
 ```
 
-**The usage tool is the single source of truth for all PHPXUI component APIs.**
+**Zero tolerance policy: If you implement a PHPXUI component without checking usage patterns first, that's an error.**
 
 **Example workflow:**
 
@@ -183,50 +184,14 @@ $roles  = $prisma->userRole->findMany([]);
 - **DOM option values are strings**: normalize `String(role.id)` in comparisons.
 - **Layouts**: create `layout.php` **only when explicitly requested** (or for scaffolded areas).
 
-### 4.1 PHPXUI Component Event Rules
-
-**CRITICAL: Each PHPXUI component has specific event handlers - never assume generic patterns**
-
-**❌ Common mistakes:**
-
-```html
-<!-- Wrong: using onchange instead of onclick -->
-<ToggleSwitch pp-bind-checked="active" onchange="setActive(!active)" />
-<Checkbox pp-bind-checked="selected" onchange="setSelected(!selected)" />
-
-<!-- Wrong: missing pp-bind- prefix for modern binding -->
-<ToggleSwitch checked="active" onclick="setActive(!active)" />
-<!-- ^ This still works but pp-bind-checked is preferred -->
-```
-
-**✅ Correct modern patterns:**
-
-```html
-<!-- Correct: pp-bind-checked + onclick -->
-<ToggleSwitch pp-bind-checked="active" onclick="setActive(!active)" />
-<Checkbox pp-bind-checked="selected" onclick="setSelected(!selected)" />
-```
-
-**RULE: Always use `onclick` for ToggleSwitch and Checkbox - NEVER `onchange`**
-
 ---
 
 ## 5) Core Rules
 
-### 5.1 Component API Authority (priority #1)
+### 5.1 File order (priority #1) — with visuals
 
-- **MANDATORY**: Use `pphp.phpxuiComponentUsage <ComponentName>` before any PHPXUI component
-- **Follow exact patterns**: The tool shows current API including latest improvements
-- **Modern bindings**: Components now support `pp-bind-checked` with `onclick` handlers
-- **Never assume**: APIs evolve - the usage tool is always current
-
-**Example patterns (from usage tool):**
-
-```html
-<!-- Modern controlled pattern -->
-<ToggleSwitch pp-bind-checked="isActive" onclick="setIsActive(!isActive)" />
-<Checkbox pp-bind-checked="selected" onclick="setSelected(!selected)" />
-```
+- Always: PHP imports + server data → HTML → **one** `<script>` at the **bottom**.
+- Never place `<script>` before markup. (Examples in Quick Start.)
 
 ### 5.2 Component usage (priority #2) — **Tag syntax only**
 
