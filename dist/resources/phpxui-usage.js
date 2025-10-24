@@ -109,7 +109,7 @@ use Lib\\PHPXUI\\{
                 html: `<Button variant="outline" onclick="setOpenDialog(true)">Open Dialog</Button>
 
 <Dialog open="openDialog">
-  <form>
+  <form onsubmit="handleSubmit(event)">
     <DialogContent${contentWidth}>
       <DialogHeader>
         <DialogTitle>Edit profile</DialogTitle>
@@ -121,12 +121,12 @@ use Lib\\PHPXUI\\{
       <div class="grid gap-4">
         <div class="grid gap-3">
           <Label for="name-1">Name</Label>
-          <Input id="name-1" name="name" value="Pedro Duarte" />
+          <Input id="name-1" name="name" value="{formName}" oninput="setFormName(this.value)" />
         </div>
 
         <div class="grid gap-3">
           <Label for="username-1">Username</Label>
-          <Input id="username-1" name="username" value="@peduarte" />
+          <Input id="username-1" name="username" value="{formUsername}" oninput="setFormUsername(this.value)" />
         </div>
       </div>
 
@@ -140,11 +140,22 @@ use Lib\\PHPXUI\\{
   </form>
 </Dialog>`,
                 js: `<script>
-  const [openDialog, setOpenDialog] = pphp.state(false);
+  const [openDialog, setOpenDialog] = pp.state(false);
+  const [formName, setFormName] = pp.state("Pedro Duarte");
+  const [formUsername, setFormUsername] = pp.state("@peduarte");
+  
+  function handleSubmit(event) {
+    event.preventDefault();
+    // Process form data
+    console.log("Saving:", { name: formName, username: formUsername });
+    // Close dialog after save
+    setOpenDialog(false);
+  }
 </script>`,
                 notes: [
                     "Controlled pattern: external button opens via state var.",
                     "Close via <DialogClose asChild> or by setting setOpenDialog(false).",
+                    "Controlled pattern: external button opens via state var bound to Dialog[open].",
                 ],
             },
         },
@@ -252,40 +263,54 @@ use Lib\\PHPXUI\\{
                 html: `<Button variant="outline" onclick="setOpenSheet(true)">Open</Button>
 
 <Sheet open="openSheet">
-  <SheetContent>
-    <SheetHeader>
-      <SheetTitle>Edit profile</SheetTitle>
-      <SheetDescription>
-        Make changes to your profile here. Click save when you're done.
-      </SheetDescription>
-    </SheetHeader>
+  <form onsubmit="handleSheetSubmit(event)">
+    <SheetContent>
+      <SheetHeader>
+        <SheetTitle>Edit profile</SheetTitle>
+        <SheetDescription>
+          Make changes to your profile here. Click save when you're done.
+        </SheetDescription>
+      </SheetHeader>
 
-    <div class="grid flex-1 auto-rows-min gap-6 px-4">
-      <div class="grid gap-3">
-        <Label for="sheet-demo-name">Name</Label>
-        <Input id="sheet-demo-name" value="Pedro Duarte" />
+      <div class="grid flex-1 auto-rows-min gap-6 px-4">
+        <div class="grid gap-3">
+          <Label for="sheet-demo-name">Name</Label>
+          <Input id="sheet-demo-name" value="{formName}" oninput="setFormName(this.value)" />
+        </div>
+        <div class="grid gap-3">
+          <Label for="sheet-demo-username">Username</Label>
+          <Input id="sheet-demo-username" value="{formUsername}" oninput="setFormUsername(this.value)" />
+        </div>
       </div>
-      <div class="grid gap-3">
-        <Label for="sheet-demo-username">Username</Label>
-        <Input id="sheet-demo-username" value="@peduarte" />
-      </div>
-    </div>
 
-    <SheetFooter>
-      <Button type="submit">Save changes</Button>
-      <SheetClose asChild="true">
-        <Button variant="outline">Close</Button>
-      </SheetClose>
-    </SheetFooter>
-  </SheetContent>
+      <SheetFooter>
+        <Button type="submit">Save changes</Button>
+        <SheetClose>
+          <Button variant="outline">Close</Button>
+        </SheetClose>
+      </SheetFooter>
+    </SheetContent>
+  </form>
 </Sheet>`,
                 js: `<script>
-  const [openSheet, setOpenSheet] = pphp.state(false);
+  const [openSheet, setOpenSheet] = pp.state(false);
+  const [formName, setFormName] = pp.state("Pedro Duarte");
+  const [formUsername, setFormUsername] = pp.state("@peduarte");
+  
+  function handleSheetSubmit(event) {
+    event.preventDefault();
+    // Process form data
+    console.log("Saving:", { name: formName, username: formUsername });
+    // Close sheet after save
+    setOpenSheet(false);
+  }
 </script>`,
                 notes: [
-                    "Controlled pattern: external button opens via state var.",
+                    "Form inputs need complete two-way binding: value + oninput handlers.",
+                    "Form submission handlers that close the sheet after processing.",
                     'Set closeOnOverlayClick="false" on <Sheet> to disable overlay click-to-close.',
                     'Change side via <SheetContent side="left|right|top|bottom"> (default: right).',
+                    "Controlled pattern: external button opens via state var bound to Sheet[open].",
                 ],
             },
         },
@@ -349,8 +374,8 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<Button size="icon" aria-label="Add">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-       aria-hidden="true">
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true">
     <path d="M12 5v14M5 12h14"></path>
   </svg>
 </Button>`,
@@ -447,7 +472,7 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<Button variant="outline" onclick="setOpenAlert(true)">Show Dialog</Button>
 
-<AlertDialog open="openAlert" overlayClass="bg-black/60">
+<AlertDialog open="openAlert">
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -459,14 +484,23 @@ use Lib\\PHPXUI\\{
 
     <AlertDialogFooter>
       <AlertDialogCancel>Cancel</AlertDialogCancel>
-      <AlertDialogAction variant="destructive">Continue</AlertDialogAction>
+      <AlertDialogAction variant="destructive" onclick="handleDeleteAction()">Continue</AlertDialogAction>
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>`,
                 js: `<script>
-  const [openAlert, setOpenAlert] = pphp.state(false);
+  const [openAlert, setOpenAlert] = pp.state(false);
+  
+  function handleDeleteAction() {
+    // Perform the destructive action here
+    console.log("Performing delete action...");
+    // Close the dialog after action
+    setOpenAlert(false);
+  }
 </script>`,
                 notes: [
+                    'AlertDialogAction typically performs an action then closes: onclick="handleAction()".',
+                    "Dialog closes automatically on overlay click/escape when using controlled pattern.",
                     "Controlled pattern: external button opens via state var bound to AlertDialog[open].",
                     "Customize overlay with overlayClass on <AlertDialog>.",
                     "Use AlertDialogAction[variant|size|asChild] for styling/behavior.",
@@ -481,7 +515,6 @@ function toggleSwitchDoc(_tailwind) {
         requires: ["ToggleSwitch"],
         props: {
             "ToggleSwitch[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onchange (e.g., onchange="setIsActive(!isActive)").',
-            "ToggleSwitch[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onchange handler for state updates.",
             "ToggleSwitch[name]": "string. Form field name for form submissions.",
             "ToggleSwitch[value]": "string. Value when checked (default: 'on').",
             "ToggleSwitch[disabled]": 'boolean (e.g., disabled="true").',
@@ -533,15 +566,15 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" name="isActive" pp-bind-checked="isActive" onchange="setIsActive(!isActive)" />
+  <ToggleSwitch id="user-is-active" name="isActive" checked="isActive" onchange="setIsActive(!isActive)" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 js: `<script>
   // Controlled approach - toggle the current state
-  const [isActive, setIsActive] = pphp.state(false);
+  const [isActive, setIsActive] = pp.state(false);
 </script>`,
                 notes: [
-                    'Controlled: pp-bind-checked="isActive" + onchange="setIsActive(!isActive)".',
+                    'Controlled: checked="isActive" + onchange="setIsActive(!isActive)".',
                     "Toggle pattern: !isActive flips the current state on each change.",
                     "Follows standard HTML input conventions with toggle behavior.",
                 ],
@@ -712,7 +745,7 @@ function inputDoc(_tailwind) {
         props: {
             "Input[type]": 'standard HTML types: "text" | "email" | "password" | "search" | "number" | "tel" | "url" | "date" | "time" etc. (default: "text")',
             "Input[placeholder]": "string placeholder text.",
-            "Input[value]": "string (static). For reactive control, pair with pp-bind-value + oninput.",
+            "Input[value]": "string (static). For reactive control, pair with value + oninput.",
             "Input[id]": "string id attribute.",
             "Input[name]": "string name attribute.",
             "Input[required]": 'boolean (e.g., required="true").',
@@ -797,15 +830,22 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<div class="grid gap-2">
   <Label htmlFor="email-ctrl">Email</Label>
-  <Input id="email-ctrl" type="email" pp-bind-value="email" oninput="setEmail(this.value)" placeholder="m@example.com" />
+  <Input 
+    id="email-ctrl" 
+    type="email" 
+    value="{email}" 
+    oninput="setEmail(this.value)" 
+    placeholder="m@example.com" 
+  />
 </div>`,
                 js: `<script>
-  // Visual-only component: use PPHP state for control.
-  const [email, setEmail] = pphp.state("");
+  // Two-way binding: BOTH value AND oninput are required
+  const [email, setEmail] = pp.state("");
 </script>`,
                 notes: [
-                    "Input is visual-only; it does not implement two-way binding by itself.",
-                    'Use pp-bind-value + oninput="setX(this.value)" to control the value with PPHP state.',
+                    "🚨 CRITICAL: Two-way binding requires BOTH value AND oninput handler.",
+                    'Never use value alone - always pair with oninput="setState(this.value)".',
+                    "Input is visual-only; PPHP state provides the reactivity through this binding pattern.",
                 ],
             },
         },
@@ -904,12 +944,12 @@ use Lib\\PHPXUI\\{
   <!-- CONTAINER for body rows -->
   <TableBody>
     <template pp-for="(invoice, idx) in invoices">
-      <TableRow>
+      <TableRow key="{idx}">
         <!-- CELLS inside the row -->
-        <TableCell class="font-medium">{{ invoice.invoice }}</TableCell>
-        <TableCell>{{ invoice.paymentStatus }}</TableCell>
-        <TableCell>{{ invoice.paymentMethod }}</TableCell>
-        <TableCell class="text-right">{{ invoice.totalAmount }}</TableCell>
+        <TableCell class="font-medium">{invoice.invoice}</TableCell>
+        <TableCell>{invoice.paymentStatus}</TableCell>
+        <TableCell>{invoice.paymentMethod}</TableCell>
+        <TableCell class="text-right">{invoice.totalAmount}</TableCell>
       </TableRow>
     </template>
   </TableBody>
@@ -925,7 +965,7 @@ use Lib\\PHPXUI\\{
 </Table>`,
                 js: `<script>
   // Visual-only: rows render from reactive data. Arrays/objects are reactive directly.
-  const invoices = pphp.state([
+  const invoices = pp.state([
     { invoice: 'INV001', paymentStatus: 'Paid',    totalAmount: '$250.00', paymentMethod: 'Credit Card' },
     { invoice: 'INV002', paymentStatus: 'Pending', totalAmount: '$150.00', paymentMethod: 'PayPal' },
     { invoice: 'INV003', paymentStatus: 'Unpaid',  totalAmount: '$350.00', paymentMethod: 'Bank Transfer' },
@@ -947,7 +987,6 @@ use Lib\\PHPXUI\\{
                     "Cells: TableHead (header cells), TableCell (body/footer cells)",
                     "Use TableFooter for summaries; set colspan via TableCell[colspan].",
                     "Purely presentational; no internal sorting, pagination, or selection.",
-                    "Render rows with pp-for. Arrays/objects are reactive directly (no .value).",
                     "Use Tailwind utilities on subcomponents (e.g., .text-right, width classes).",
                     "Use <TableFooter> for summaries; set colspan via TableCell[colspan].",
                 ],
@@ -964,7 +1003,7 @@ function textareaDoc(_tailwind) {
             "Textarea[rows]": 'number of visible lines (e.g., rows="4").',
             "Textarea[id]": "string id attribute.",
             "Textarea[name]": "string name attribute.",
-            "Textarea[value]": "string (static). For reactive control, pair with pp-bind-value + oninput.",
+            "Textarea[value]": "string (static). For reactive control, pair with value + oninput.",
             "Textarea[required]": 'boolean (e.g., required="true").',
             "Textarea[disabled]": "boolean.",
             "Textarea[readonly]": "boolean.",
@@ -1018,23 +1057,23 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="grid gap-2">
-  <Label htmlFor="bio">Bio</Label>
+  <Label for="bio">Bio</Label>
   <Textarea
     id="bio"
-    pp-bind-value="bio"
+    value="{bio}"
     oninput="setBio(this.value)"
     placeholder="Short bio…"
     class="field-sizing-content min-h-24"
   />
-  <span class="text-xs text-muted-foreground">{{ bio.length }}/300</span>
+  <span class="text-xs text-muted-foreground">{bio.length}/300</span>
 </div>`,
                 js: `<script>
   // Visual-only component: use PPHP state for control (primitive string).
-  const [bio, setBio] = pphp.state("");
+  const [bio, setBio] = pp.state("");
 </script>`,
                 notes: [
                     "Textarea is visual-only; it does not implement two-way binding by itself.",
-                    'Use pp-bind-value + oninput="setX(this.value)" with a primitive string state.',
+                    'Use value + oninput="setX(this.value)" with a primitive string state.',
                     "For natural growth without JS, use field-sizing-content (if enabled) with a sensible min-h-*.",
                 ],
             },
@@ -1311,7 +1350,7 @@ use Lib\\PHPXUI\\{
 </div>`,
                 js: `<script>
   // Primitive boolean state controls whether to show skeleton or content.
-  const [loading, setLoading] = pphp.state(true);
+  const [loading, setLoading] = pp.state(true);
 
   // Example auto-finish:
   // setTimeout(() => setLoading(false), 1200);
@@ -1402,7 +1441,6 @@ function checkboxDoc(_tailwind) {
         requires: ["Checkbox", "Label"],
         props: {
             "Checkbox[checked]": 'true | false | string (state var name). When a string is provided (e.g., "isActive"), this is **controlled** and you must handle state updates via onchange (e.g., onchange="setIsActive(!isActive)").',
-            "Checkbox[pp-bind-checked]": "string (state var name). Modern binding approach - automatically syncs with state. Still requires onchange handler for state updates.",
             "Checkbox[id]": "string. Pair with Label[for] for accessibility.",
             "Checkbox[name]": "string. Form field name for form submissions.",
             "Checkbox[value]": "string. Value when checked (default: 'on').",
@@ -1470,15 +1508,15 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-3">
-  <Checkbox id="is-active" name="isActive" pp-bind-checked="isActive" onchange="setIsActive(!isActive)" />
+  <Checkbox id="is-active" name="isActive" checked="isActive" onchange="setIsActive(!isActive)" />
   <Label for="is-active">Active</Label>
 </div>`,
                 js: `<script>
   // Controlled approach - toggle the current state
-  const [isActive, setIsActive] = pphp.state(false);
+  const [isActive, setIsActive] = pp.state(false);
 </script>`,
                 notes: [
-                    'Controlled: pp-bind-checked="isActive" + onchange="setIsActive(!isActive)".',
+                    'Controlled: checked="isActive" + onchange="setIsActive(!isActive)".',
                     "Toggle pattern: !isActive flips the current state on each change.",
                     "Follows standard HTML input conventions with toggle behavior.",
                 ],
@@ -1498,6 +1536,199 @@ use Lib\\PHPXUI\\{
                     'Use asChild="true" when you need a specific tag/structure for the root (e.g., <button>).',
                     "Accessibility attributes are forwarded; keep size/shape via Tailwind.",
                     "Standard toggle pattern still applies with asChild.",
+                ],
+            },
+        },
+    };
+}
+function selectDoc(_tailwind) {
+    return {
+        name: "Select",
+        requires: [
+            "Select",
+            "SelectTrigger",
+            "SelectValue",
+            "SelectContent",
+            "SelectGroup",
+            "SelectLabel",
+            "SelectItem",
+        ],
+        props: {
+            // Root
+            "Select[open]": "boolean | string (state var name). Controls popover visibility when provided.",
+            "Select[onOpenChange]": "string (function name). Called with the next boolean open state.",
+            "Select[value]": "string | state var name. The selected value when controlled.",
+            "Select[onValueChange]": "string (function name). Called with the selected string value.",
+            "Select[class]": "Tailwind classes for the root container.",
+            // Trigger
+            "SelectTrigger[asChild]": "boolean (default: false).",
+            "SelectTrigger[name]": "string (optional form field name).",
+            "SelectTrigger[size]": 'one of "default" | "sm" | "lg" | "icon" (default: "default").',
+            "SelectTrigger[class]": "Tailwind classes to size the button (e.g., w-[180px]).",
+            // Content (popover)
+            "SelectContent[side]": 'one of "top" | "right" | "bottom" | "left" (default: "bottom").',
+            "SelectContent[align]": 'one of "start" | "center" | "end" (default: "start").',
+            "SelectContent[sideOffset]": "px offset from trigger (default: 4).",
+            "SelectContent[class]": "Tailwind classes.",
+            // Items
+            "SelectItem[disabled]": "boolean (default: false).",
+            "SelectItem[value]": "string (required).",
+            "SelectItem[class]": "Tailwind classes.",
+            // Value
+            "SelectValue[placeholder]": "string placeholder when no value.",
+            "SelectValue[class]": "Tailwind classes.",
+        },
+        patterns: {
+            basic: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+};
+
+?>`,
+                html: `<Select>
+  <SelectTrigger class="w-[180px]">
+    <SelectValue placeholder="Select a fruit" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectGroup>
+      <SelectLabel>Fruits</SelectLabel>
+      <SelectItem value="apple">Apple</SelectItem>
+      <SelectItem value="banana">Banana</SelectItem>
+      <SelectItem value="blueberry">Blueberry</SelectItem>
+      <SelectItem value="grapes">Grapes</SelectItem>
+      <SelectItem value="pineapple">Pineapple</SelectItem>
+    </SelectGroup>
+  </SelectContent>
+</Select>`,
+                notes: [
+                    "Uncontrolled by default (internal open/value).",
+                    "All option values are strings.",
+                ],
+            },
+            // ✅ Controlled selection (value)
+            controlled: {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+};
+
+?>`,
+                html: `<Select value="fruit" onValueChange="handleFruitChange">
+  <SelectTrigger class="w-[200px]">
+    <SelectValue placeholder="Pick one…" />
+  </SelectTrigger>
+  <SelectContent side="bottom" align="start" sideOffset="6">
+    <SelectGroup>
+      <SelectLabel>Fruits</SelectLabel>
+      <SelectItem value="1">Apple</SelectItem>
+      <SelectItem value="2">Banana</SelectItem>
+      <SelectItem value="3" disabled="true">Blueberry</SelectItem>
+      <SelectItem value="4">Grapes</SelectItem>
+    </SelectGroup>
+  </SelectContent>
+</Select>`,
+                js: `<script>
+  // Primitive string state for the selected value
+  const [fruit, setFruit] = pp.state("");
+
+  // The component calls this with the new string value
+  function handleFruitChange(nextValue) {
+    // Values are strings; normalize/convert if needed
+    setFruit(nextValue);
+  }
+</script>`,
+                notes: [
+                    'Controlled: pass value="fruit" and onValueChange="handleFruitChange".',
+                    "Handler receives the selected string value.",
+                ],
+            },
+            // ✅ Controlled popover open/close
+            "controlled-open": {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+};
+
+?>`,
+                html: `<button class="mb-2 text-sm underline" onclick="setOpenSel(true)">Open programmatically</button>
+
+<Select open="openSel" onOpenChange="setOpenSel" value="size" onValueChange="setSize">
+  <SelectTrigger size="sm" class="w-[160px]">
+    <SelectValue placeholder="Size" />
+  </SelectTrigger>
+  <SelectContent side="bottom" align="start">
+    <SelectGroup>
+      <SelectItem value="s">Small</SelectItem>
+      <SelectItem value="m">Medium</SelectItem>
+      <SelectItem value="l">Large</SelectItem>
+    </SelectGroup>
+  </SelectContent>
+</Select>`,
+                js: `<script>
+  const [openSel, setOpenSel] = pp.state(false);
+  const [size, setSize] = pp.state("");
+</script>`,
+                notes: [
+                    'Use open="openSel" + onOpenChange="setOpenSel" to control visibility.',
+                    'You can control selection at the same time with value="…" + onValueChange.',
+                ],
+            },
+            // Render custom trigger (link, button, etc.)
+            "as-child": {
+                phpUse: `<?php
+
+use Lib\\PHPXUI\\{
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+};
+
+?>`,
+                html: `<Select>
+  <SelectTrigger asChild="true">
+    <button type="button" class="w-[220px] inline-flex items-center justify-between rounded-md border px-3 py-2">
+      <span class="text-sm text-muted-foreground">Choose framework</span>
+      <span aria-hidden="true">▾</span>
+    </button>
+  </SelectTrigger>
+  <SelectContent>
+    <SelectGroup>
+      <SelectLabel>Frameworks</SelectLabel>
+      <SelectItem value="laravel">Laravel</SelectItem>
+      <SelectItem value="symfony">Symfony</SelectItem>
+      <SelectItem value="prismaphp">Prisma PHP</SelectItem>
+    </SelectGroup>
+  </SelectContent>
+</Select>`,
+                notes: [
+                    'SelectTrigger asChild="true" lets you render a custom element as the trigger.',
+                    "Keep keyboard/accessibility semantics intact on your custom element.",
                 ],
             },
         },
@@ -1537,6 +1768,8 @@ export function getPhpXuiUsageDoc(nameRaw, tailwind) {
         return separatorDoc(tailwind);
     if (name === "checkbox")
         return checkboxDoc(tailwind);
+    if (name === "select")
+        return selectDoc(tailwind);
     // Add more components here as you grow the catalog...
     return null;
 }

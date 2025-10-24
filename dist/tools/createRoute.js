@@ -61,7 +61,7 @@ function parseRoutePattern(route) {
     };
 }
 export function registerCreateRoute(server, ctx) {
-    server.registerTool("pphp.route.create", {
+    server.registerTool("pp.route.create", {
         title: "Create Route",
         description: "Creates routes following Prisma PHP conventions. Supports static routes, route groups (admin), " +
             "private folders (_components), dynamic routes ([slug], [...slug]), and API handlers. " +
@@ -184,7 +184,7 @@ ${dynamicParams
                     ? generateTailwindContent(routeTitle, description, urlPath, dynamicParams.filter((p) => typeof p === "string"))
                     : generateInlineContent(routeTitle, description, urlPath, dynamicParams.filter((p) => typeof p === "string"));
                 routeContent = `<?php
-use Lib\\MainLayout;
+use PP\\MainLayout;
 ${dynamicParamCode}
 MainLayout::$title = '${phpEscape(routeTitle)}';
 MainLayout::$description = '${phpEscape(description)}';
@@ -232,7 +232,7 @@ ${htmlContent}
 </div>
 `.trim();
                 layoutContent = `<?php
-use Lib\\MainLayout;
+use PP\\MainLayout;
 ?>
 
 ${layoutHtml}

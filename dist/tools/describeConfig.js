@@ -174,7 +174,7 @@ function detectPHPXUI(root) {
  *                       MCP Tool Export                        *
  * ──────────────────────────────────────────────────────────── */
 export function registerDescribeConfig(server, ctx) {
-    server.registerTool("pphp.config.describe", {
+    server.registerTool("pp.config.describe", {
         title: "Describe Prisma PHP project",
         description: "Summarizes prisma-php.json and validates common paths/options (Tailwind v4 entry at ./src/app/css/tailwind.css when enabled).",
         inputSchema: {}, // no inputs

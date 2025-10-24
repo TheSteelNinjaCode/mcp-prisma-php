@@ -17,6 +17,7 @@ import { registerCrudCreateGuide } from "./crudCreateGuide.js";
 import { registerCrudUpdateGuide } from "./crudUpdateGuide.js";
 import { registerCreateRoute } from "./createRoute.js";
 import { registerPHPXUIComponentUsage } from "./phpxuiComponentUsage.js";
+import { registerPPIconsComponentUsage } from "./ppiconsComponentUsage.js";
 export function registerTools(server, ctx) {
     registerAddPHPXUIComponent(server, ctx);
     registerAddPPIconComponent(server, ctx);
@@ -32,6 +33,7 @@ export function registerTools(server, ctx) {
     registerListRoutes(server, ctx);
     registerListComponents(server, ctx);
     registerPHPXUIComponentUsage(server, ctx);
+    registerPPIconsComponentUsage(server, ctx);
     registerPrismaGenerate(server, ctx);
     registerPrismaPrepare(server, ctx);
     registerRunNpmScript(server, ctx);

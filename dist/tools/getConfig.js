@@ -1,5 +1,5 @@
 export function registerGetConfig(server, ctx) {
-    server.registerTool("pphp.config.get", {
+    server.registerTool("pp.config.get", {
         title: "Get prisma-php.json",
         description: "Returns the raw contents of prisma-php.json from the workspace root",
         inputSchema: {}, // ZodRawShape (empty)

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ensurePrismaPhpProject } from "../utils/project.js";
 import { safeExec } from "../utils/exec.js";
 export function registerPrismaGenerate(server, ctx) {
-    server.registerTool("pphp.prisma.generate", {
+    server.registerTool("pp.prisma.generate", {
         title: "Prisma ORM generate",
         description: 'Runs `npx ppo generate` only if prisma is enabled in prisma-php.json (`"prisma": true`).',
         inputSchema: {
@@ -19,7 +19,7 @@ export function registerPrismaGenerate(server, ctx) {
                         {
                             type: "text",
                             text: 'Prisma ORM is not enabled in prisma-php.json (expected `"prisma": true`). ' +
-                                "Run `pphp.project.update` to update the environment and enable Prisma.",
+                                "Run `pp.project.update` to update the environment and enable Prisma.",
                         },
                     ],
                 };

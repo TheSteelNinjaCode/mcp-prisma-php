@@ -33,7 +33,7 @@ const okAsText = (obj) => ({
     content: [{ type: "text", text: JSON.stringify(obj, null, 2) }],
 });
 export function registerCrudDeleteGuide(server, ctx) {
-    server.registerTool("pphp.crud.deleteGuide", {
+    server.registerTool("pp.crud.deleteGuide", {
         title: "Generate DELETE pattern (backend + frontend template, separated)",
         description: "Outputs two sections: (1) Backend model approach (Prisma PHP) and (2) Frontend-only Todo inline delete. Backend omitted if prisma=false.",
         inputSchema: InputShape,
@@ -126,14 +126,14 @@ export function registerCrudDeleteGuide(server, ctx) {
             ].join("\n");
             const js = [
                 "<script>",
-                `const [${plural}, set${Model}s] = pphp.state([]);`,
-                `const [deleting, setDeleting] = pphp.state(false);`,
-                `export async function requestDeleteById(id) {`,
+                `const [${plural}, set${Model}s] = pp.state([]);`,
+                `const [deleting, setDeleting] = pp.state(false);`,
+                `async function requestDeleteById(id) {`,
                 `  if (!id) return;`,
                 `  if (!confirm(${JSON.stringify(confirmMessage)})) return;`,
                 `  setDeleting(true);`,
                 `  try {`,
-                `    const { response } = await pphp.fetchFunction('${fnName}', { ${whereUniqueKey}: id });`,
+                `    const { response } = await pp.fetchFunction('${fnName}', { ${whereUniqueKey}: id });`,
                 `    if (!response?.ok) { alert(response?.message || 'Delete failed'); setDeleting(false); return; }`,
                 `    set${Model}s(prev => prev.filter(r => String(r.${whereUniqueKey}) !== String(id)));`,
                 `  } catch (err) { alert('Delete failed'); }`,
@@ -150,8 +150,8 @@ export function registerCrudDeleteGuide(server, ctx) {
             `  <h2 class="text-xl font-bold mb-4">Delete item</h2>`,
             `  <ul>`,
             `    <template pp-for="row in items">`,
-            `      <li class="flex items-center gap-2 mb-2">`,
-            `        <span class="flex-1">{{ row.name }}</span>`,
+            `      <li key="{row.id}" class="flex items-center gap-2 mb-2">`,
+            `        <span class="flex-1">{row.name}</span>`,
             `        <button onclick="removeRow(row.id)" class="text-red-600 hover:underline">Delete</button>`,
             `      </li>`,
             `    </template>`,
@@ -160,10 +160,10 @@ export function registerCrudDeleteGuide(server, ctx) {
         ].join("\n");
         const feJs = [
             "<script>",
-            `const [items, setItems] = pphp.state([{ id: crypto.randomUUID?.() || 1, name: "Delete me", isActive: true }]);`,
-            `export function removeRow(id) {`,
+            `const [items, setItems] = pp.state([{ id: crypto.randomUUID?.() || 1, name: "Delete me", isActive: true }]);`,
+            `function removeRow(id) {`,
             `  if (!confirm(${JSON.stringify(confirmMessage)})) return;`,
-            `  setItems(items.value.filter(r => String(r.id) !== String(id)));`,
+            `  setItems(items.filter(r => String(r.id) !== String(id)));`,
             `  // For API later: DELETE /api/items/:id then reconcile`,
             `}`,
             "</script>",
@@ -172,7 +172,6 @@ export function registerCrudDeleteGuide(server, ctx) {
             prismaEnabled
                 ? "Both sections included: backend (Prisma) + frontend reference (Todo-style)."
                 : "Prisma is disabled → backend omitted; use the frontend Todo-style section.",
-            "Frontend templates avoid `.value` in templates; use `.value` in JS when reading/writing state.",
             "deleteMany(): returns only { count }.",
         ];
         const hints = {

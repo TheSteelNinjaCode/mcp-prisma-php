@@ -78,7 +78,7 @@ function toRouteInfo(filePath) {
     };
 }
 export function registerListRoutes(server, ctx) {
-    server.registerTool("pphp.listRoutes", {
+    server.registerTool("pp.listRoutes", {
         title: "List file-based routes",
         description: "Parses ./settings/files-list.json and returns all file-based routes (index.php). Skips layout.php by default and marks not-found.php / error.php as special.",
         inputSchema: {

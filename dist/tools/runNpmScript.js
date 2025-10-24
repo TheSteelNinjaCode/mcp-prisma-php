@@ -3,7 +3,7 @@ import { ensurePrismaPhpProject } from "../utils/project.js";
 import { hasNpmScript } from "../utils/npm.js";
 import { spawnDetached, spawnExternalTerminalWindows } from "../utils/proc.js";
 export function registerRunNpmScript(server, ctx) {
-    server.registerTool("pphp.npm.script", {
+    server.registerTool("pp.npm.script", {
         title: "Run arbitrary npm script",
         description: "Runs any npm script from package.json (Windows: opens a terminal).",
         inputSchema: {

@@ -67,7 +67,7 @@ function prepareExcludes(cfg, ROOT) {
     });
 }
 export function registerUpdateFilterFiles(server, ctx) {
-    server.registerTool("pphp.update.filterFiles", {
+    server.registerTool("pp.update.filterFiles", {
         title: "Filter files against prisma-php.json excludeFiles",
         description: "Given a list of files (absolute or relative), returns {toUpdate, skipped} based on excludeFiles.",
         inputSchema: {

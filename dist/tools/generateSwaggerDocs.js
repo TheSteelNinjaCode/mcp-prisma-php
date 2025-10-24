@@ -2,7 +2,7 @@ import { safeExec } from "../utils/exec.js";
 import { ensurePrismaPhpProject } from "../utils/project.js";
 import { hasNpmScript } from "../utils/npm.js";
 export function registerGenerateSwaggerDocs(server, ctx) {
-    server.registerTool("pphp.generateSwaggerDocs", {
+    server.registerTool("pp.generateSwaggerDocs", {
         title: "Generate Swagger Docs",
         description: "Runs `npm run create-swagger-docs` in project root — only if swaggerDocs is enabled in prisma-php.json.",
         inputSchema: {}, // ZodRawShape
@@ -18,7 +18,7 @@ export function registerGenerateSwaggerDocs(server, ctx) {
                         {
                             type: "text",
                             text: 'Swagger docs are disabled in prisma-php.json (expected `"swaggerDocs": true`). ' +
-                                "Use `pphp.project.update` to enable Swagger in this project, then rerun.",
+                                "Use `pp.project.update` to enable Swagger in this project, then rerun.",
                         },
                     ],
                 };
@@ -31,7 +31,7 @@ export function registerGenerateSwaggerDocs(server, ctx) {
                         {
                             type: "text",
                             text: 'Could not find the "create-swagger-docs" script in package.json. ' +
-                                "Run `pphp.project.update` to add the script, or define it manually, then retry.",
+                                "Run `pp.project.update` to add the script, or define it manually, then retry.",
                         },
                     ],
                 };

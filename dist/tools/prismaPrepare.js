@@ -123,7 +123,7 @@ function hasMigrations(prismaDir) {
 }
 /* ───────────────── tool ───────────────── */
 export function registerPrismaPrepare(server, ctx) {
-    server.registerTool("pphp.prisma.prepare", {
+    server.registerTool("pp.prisma.prepare", {
         title: "Prepare database (Prisma)",
         description: "Checks prisma enabled in prisma-php.json, aligns provider + env URL, canonicalizes datasource, runs migrate/db push, then ppo generate.",
         inputSchema: InputShape,
@@ -140,8 +140,8 @@ export function registerPrismaPrepare(server, ctx) {
                         {
                             type: "text",
                             text: 'Prisma ORM is disabled in prisma-php.json (expected `"prisma": true`).\n' +
-                                "Action: run `pphp.project.update` to enable Prisma.\n" +
-                                "Tip: confirm flags via `pphp.config.describe`.",
+                                "Action: run `pp.project.update` to enable Prisma.\n" +
+                                "Tip: confirm flags via `pp.config.describe`.",
                         },
                     ],
                 };

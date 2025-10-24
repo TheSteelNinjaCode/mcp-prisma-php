@@ -34,7 +34,7 @@ const okAsText = (obj) => ({
     content: [{ type: "text", text: JSON.stringify(obj, null, 2) }],
 });
 export function registerCrudCreateGuide(server, ctx) {
-    server.registerTool("pphp.crud.createGuide", {
+    server.registerTool("pp.crud.createGuide", {
         title: "Generate CREATE pattern (backend + frontend template, separated)",
         description: "Outputs two sections: (1) Backend model approach (Prisma PHP) and (2) Frontend-only Todo-style template. Backend is omitted if prisma=false.",
         inputSchema: InputShape,
@@ -186,20 +186,20 @@ export function registerCrudCreateGuide(server, ctx) {
                     return isBool
                         ? [
                             `  <label class="flex items-center gap-2">`,
-                            `    <input type="checkbox" onchange="patchForm({ ${f}: !!this.checked })" checked="{{ !!form.${f} }}" />`,
+                            `    <input type="checkbox" onchange="patchForm({ ${f}: !!this.checked })" checked="{!!form.${f}}" />`,
                             `    <span>${f}</span>`,
                             `  </label>`,
                         ].join("\n")
                         : [
                             `  <label class="grid gap-1">`,
                             `    <div class="text-sm text-gray-700">${f}</div>`,
-                            `    <input value="{{ form.${f} ?? '' }}" oninput="patchForm({ ${f}: this.value })" class="border rounded px-2 py-1" />`,
+                            `    <input value="{form.${f} ?? ''}" oninput="patchForm({ ${f}: this.value })" class="border rounded px-2 py-1" />`,
                             `  </label>`,
                         ].join("\n");
                 }),
                 `  <div class="flex gap-2">`,
-                `    <button type="submit" disabled="{{ saving }}" class="bg-blue-600 text-white px-3 py-1 rounded">`,
-                `      {{ saving ? 'Saving…' : 'Save' }}`,
+                `    <button type="submit" disabled="{saving}" class="bg-blue-600 text-white px-3 py-1 rounded">`,
+                `      {saving ? 'Saving…' : 'Save'}`,
                 `    </button>`,
                 `    <span class="text-red-600 text-sm" pp-if="Object.keys(errors).length">Check errors</span>`,
                 `  </div>`,
@@ -212,15 +212,15 @@ export function registerCrudCreateGuide(server, ctx) {
                 : `{ name: '', email: '', isActive: true }`;
             const js = [
                 "<script>",
-                `const [${plural}, set${Model}s] = pphp.state([]);`,
-                `const [form, setForm] = pphp.state(${defaultFormObj});`,
-                `const [saving, setSaving] = pphp.state(false);`,
-                `const [errors, setErrors] = pphp.state({});`,
-                `export function patchForm(patch) { setForm(prev => ({ ...prev, ...patch })); }`,
-                `export async function submit${Model}(e) {`,
+                `const [${plural}, set${Model}s] = pp.state([]);`,
+                `const [form, setForm] = pp.state(${defaultFormObj});`,
+                `const [saving, setSaving] = pp.state(false);`,
+                `const [errors, setErrors] = pp.state({});`,
+                `function patchForm(patch) { setForm(prev => ({ ...prev, ...patch })); }`,
+                `async function submit${Model}(e) {`,
                 `  e?.preventDefault?.(); setSaving(true); setErrors({});`,
                 `  try {`,
-                `    const { response } = await pphp.fetchFunction('${fnName}', form);`,
+                `    const { response } = await pp.fetchFunction('${fnName}', form);`,
                 `    setSaving(false);`,
                 `    if (!response?.ok) { if (response?.errors) setErrors(response.errors); return; }`,
                 `    if (response?.row) set${Model}s(prev => [response.row, ...prev]);`,
@@ -236,18 +236,18 @@ export function registerCrudCreateGuide(server, ctx) {
             `<!-- Create (frontend-only) -->`,
             `<div class="max-w-md mx-auto mt-8 p-4 bg-white rounded shadow">`,
             `  <h2 class="text-xl font-bold mb-4">Create item</h2>`,
-            `  <form onsubmit="addItem()" class="flex gap-2 mb-4">`,
-            `    <input type="text" pp-bind-value="newText" oninput="setNewText(this.value)" placeholder="Type name…" class="flex-1 border rounded px-2 py-1" />`,
+            `  <form onsubmit="addItem(event)" class="flex gap-2 mb-4">`,
+            `    <input type="text" value="{newText}" oninput="setNewText(this.value)" placeholder="Type name…" class="flex-1 border rounded px-2 py-1" />`,
             `    <label class="inline-flex items-center gap-2">`,
-            `      <input type="checkbox" pp-bind-checked="newActive" onchange="setNewActive(!!this.checked)" />`,
+            `      <input type="checkbox" checked="{newActive}" onchange="setNewActive(!!this.checked)" />`,
             `      <span class="text-sm">isActive</span>`,
             `    </label>`,
             `    <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded">Add</button>`,
             `  </form>`,
             `  <ul>`,
             `    <template pp-for="row in items">`,
-            `      <li class="flex items-center gap-2 mb-2">`,
-            `        <span class="{{ row.isActive ? 'text-gray-900' : 'text-gray-400 line-through' }}">{{ row.name }}</span>`,
+            `      <li key="{row.id}" class="flex items-center gap-2 mb-2">`,
+            `        <span class="{row.isActive ? 'text-gray-900' : 'text-gray-400 line-through'}">{row.name}</span>`,
             `      </li>`,
             `    </template>`,
             `  </ul>`,
@@ -255,13 +255,14 @@ export function registerCrudCreateGuide(server, ctx) {
         ].join("\n");
         const feJs = [
             "<script>",
-            `const [items, setItems] = pphp.state([]);`,
-            `const [newText, setNewText] = pphp.state("");`,
-            `const [newActive, setNewActive] = pphp.state(true);`,
-            `export function addItem() {`,
-            `  const name = newText.value.trim(); if (!name) return;`,
-            `  const row = { id: crypto.randomUUID?.() || Date.now(), name, isActive: !!newActive.value };`,
-            `  setItems([row, ...items.value]);`,
+            `const [items, setItems] = pp.state([]);`,
+            `const [newText, setNewText] = pp.state("");`,
+            `const [newActive, setNewActive] = pp.state(true);`,
+            `function addItem(e) {`,
+            `  e.preventDefault();`,
+            `  const name = newText.trim(); if (!name) return;`,
+            `  const row = { id: crypto.randomUUID?.() || Date.now(), name, isActive: !!newActive };`,
+            `  setItems([row, ...items]);`,
             `  setNewText(""); setNewActive(true);`,
             `  // For API later: POST row, then reconcile list`,
             `}`,
@@ -271,7 +272,6 @@ export function registerCrudCreateGuide(server, ctx) {
             prismaEnabled
                 ? "Both sections included: backend (Prisma) + frontend reference (Todo-style)."
                 : "Prisma is disabled → backend omitted; use the frontend Todo-style section.",
-            "Frontend templates avoid `.value` in templates; use `.value` in JS when reading/writing state.",
         ];
         const hints = {
             allowedRootKeys: Array.from(ROOT_KEYS_MAP[op]),

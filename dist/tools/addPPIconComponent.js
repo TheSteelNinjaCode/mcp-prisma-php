@@ -4,7 +4,7 @@ import { z } from "zod";
 import { safeExec } from "../utils/exec.js";
 import { ensurePrismaPhpProject } from "../utils/project.js";
 // ⬇️ Local catalogue of valid icon names (1620+). Generate from your list.
-import { PPICONS_COMPONENTS as KNOWN_ICONS } from "../resources/ppicons-component.js";
+import { PPICONS_COMPONENTS as KNOWN_ICONS } from "../resources/ppicons-components.js";
 /** Resolve local node_modules/.bin/ppicons */
 function localBinPath(root) {
     const base = path.join(root, "node_modules", ".bin");
@@ -120,7 +120,7 @@ function createNamespaceHint(icons, isAll = false) {
     return `Import with: use Lib\\PPIcons\\{${icons.join(", ")}}; then use as HTML tags in markup.`;
 }
 export function registerAddPPIconComponent(server, ctx) {
-    server.registerTool("pphp.component.addPPIcon", {
+    server.registerTool("pp.component.addPPIcon", {
         title: "Add Component (PPIcons)",
         description: "Add one or more icon components from the PPIcons catalogue (lucide-style). " +
             "Icons are installed in the Lib\\PPIcons namespace following PSR-4 autoloading. " +

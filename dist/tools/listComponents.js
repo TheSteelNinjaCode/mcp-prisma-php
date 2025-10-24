@@ -6,7 +6,7 @@ function norm(p) {
     return p.replace(/\\/g, "/").replace(/\/{2,}/g, "/");
 }
 export function registerListComponents(server, ctx) {
-    server.registerTool("pphp.listComponents", {
+    server.registerTool("pp.listComponents", {
         title: "List PHPXUI Components",
         description: "Lists components from ./settings/class-log.json (authoritative list).",
         inputSchema: {

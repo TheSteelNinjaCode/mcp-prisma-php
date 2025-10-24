@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ensurePrismaPhpProject } from "../utils/project.js";
 import { spawnDetached, spawnExternalTerminalWindows } from "../utils/proc.js";
 export function registerUpdateProject(server, ctx) {
-    server.registerTool("pphp.project.update", {
+    server.registerTool("pp.project.update", {
         title: "Update Prisma PHP project",
         description: "Launches `npx pp update project`. On Windows opens a new terminal window for interactive prompts.",
         inputSchema: {

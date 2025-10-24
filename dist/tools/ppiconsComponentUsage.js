@@ -1,53 +1,57 @@
-// src/tools/componentUsage.ts
+// src/tools/ppiconsComponentUsage.ts
 import { z } from "zod";
 import { ensurePrismaPhpProject } from "../utils/project.js";
-import { getPhpXuiUsageDoc, } from "../resources/phpxui-usage.js";
-import { resolvePhpXUI } from "../resources/phpxui-components.js";
-export function registerPHPXUIComponentUsage(server, ctx) {
-    server.registerTool("pp.phpxui.component.usage", {
-        title: "Usage (PHPXUI)",
-        description: "Return canonical usage for a PHPXUI component (imports, HTML, optional JS). Includes multiple patterns (e.g., Dialog with-trigger vs controlled-open). Tailwind-aware.",
+import { getPPIconUsageDoc, suggestIcons } from "../resources/ppicons-usage.js";
+export function registerPPIconsComponentUsage(server, ctx) {
+    server.registerTool("pp.ppicons.component.usage", {
+        title: "Usage (PPIcons)",
+        description: "Return canonical usage for a PPIcon (PHP import + HTML tag). Mirrors PHPXUI usage shape. Supports `asPage`.",
         inputSchema: {
-            name: z.string(), // Component name (e.g., "Dialog")
-            pattern: z.enum(["with-trigger", "controlled-open"]).optional(),
-            // Optional: format as a full route page (PHP -> HTML -> JS)
+            name: z.string(), // Icon name (e.g., "search", "alarm-clock")
+            pattern: z.enum(["icon"]).optional(), // default: "icon"
             asPage: z.boolean().optional(),
-            pageTitle: z.string().optional(), // used only when asPage = true
+            pageTitle: z.string().optional(),
         },
     }, async (args, _extra) => {
         try {
             ensurePrismaPhpProject(ctx);
-            const canonical = resolvePhpXUI(args.name) || args.name;
             const tailwind = !!ctx.CONFIG?.tailwindcss;
-            const doc = getPhpXuiUsageDoc(canonical, tailwind);
+            const doc = getPPIconUsageDoc(args.name, tailwind);
             if (!doc) {
+                const hints = suggestIcons(args.name, 8);
+                const hintText = hints.length
+                    ? `\n\nDid you mean:\n- ${hints.join("\n- ")}`
+                    : "";
                 return {
                     isError: true,
                     content: [
                         {
                             type: "text",
-                            text: `No usage doc found for component "${args.name}".`,
+                            text: `No usage doc found for icon "${args.name}".${hintText}`,
                         },
                     ],
                 };
             }
-            const pattern = args.pattern ?? "with-trigger";
+            const pattern = (args.pattern ??
+                "icon");
             const piece = doc.patterns[pattern];
-            // Build a "page" (PHP -> HTML -> JS) if requested
             if (args.asPage) {
                 const php = piece?.phpUse?.trim() ?? "";
                 const html = piece?.html?.trim() ?? "";
                 const js = (piece?.js ?? "").trim();
-                const title = args.pageTitle?.trim() || `${doc.name} Example`;
+                const title = args.pageTitle?.trim() || `${doc.name} Icon Example`;
                 const page = `${php}
 
 <h1 class="text-xl font-bold mb-4">${title}</h1>
 
-${html}
+<div class="flex items-center gap-3">
+  ${html}
+  <span class="text-sm text-muted-foreground">${doc.name}</span>
+</div>
 
 ${js ? `\n${js}\n` : ""}`.trim();
                 const summary = [
-                    `Component: ${doc.name}`,
+                    `Icon: ${doc.name}`,
                     `Pattern: ${pattern}`,
                     `Requires: ${doc.requires.join(", ")}`,
                     tailwind ? "TailwindCSS: enabled" : "TailwindCSS: disabled",
@@ -67,7 +71,7 @@ ${js ? `\n${js}\n` : ""}`.trim();
                     ],
                 };
             }
-            // Otherwise, return the raw pieces for flexible composition
+            // Raw pieces (mirrors PHPXUI usage output shape)
             const out = {
                 meta: {
                     name: doc.name,
@@ -95,4 +99,4 @@ ${js ? `\n${js}\n` : ""}`.trim();
         }
     });
 }
-//# sourceMappingURL=phpxuiComponentUsage.js.map
+//# sourceMappingURL=ppiconsComponentUsage.js.map

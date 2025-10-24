@@ -65,7 +65,7 @@ const okAsText = (obj) => ({
     content: [{ type: "text", text: JSON.stringify(obj, null, 2) }],
 });
 export function registerCrudReadGuide(server, ctx) {
-    server.registerTool("pphp.crud.readGuide", {
+    server.registerTool("pp.crud.readGuide", {
         title: "Generate READ pattern (backend + frontend template, separated)",
         description: "Outputs two sections: (1) Backend model approach (Prisma PHP) and (2) Frontend-only Todo list + search. Backend is omitted if prisma=false.",
         inputSchema: InputShape,
@@ -139,15 +139,15 @@ export function registerCrudReadGuide(server, ctx) {
                 "<!-- Backend • Model approach (Read) -->",
                 `<div class="data-list">`,
                 `  <template pp-for="${itemAlias} in ${plural}">`,
-                `    <article class="data-row border rounded p-3 mb-2">`,
-                ...displayFields.map((f) => `      <div><strong>${f}:</strong> {{ ${itemAlias}.${f} }}</div>`),
+                `    <article key="{${itemAlias}.id}" class="data-row border rounded p-3 mb-2">`,
+                ...displayFields.map((f) => `      <div><strong>${f}:</strong> {${itemAlias}.${f}}</div>`),
                 `    </article>`,
                 `  </template>`,
                 `</div>`,
             ].join("\n");
             const js = [
                 "<script>",
-                `const [${plural}, set${Model}s] = pphp.state(<?= json_encode($${plural}) ?>);`,
+                `const [${plural}, set${Model}s] = pp.state(<?= json_encode($${plural}) ?>);`,
                 "</script>",
             ].join("\n");
             backend = { php, html, js };
@@ -157,15 +157,15 @@ export function registerCrudReadGuide(server, ctx) {
             `<!-- Read (frontend-only) -->`,
             `<div class="max-w-md mx-auto mt-8 p-4 bg-white rounded shadow">`,
             `  <h2 class="text-xl font-bold mb-4">Items</h2>`,
-            `  <input type="text" pp-bind-value="search" oninput="setSearch(this.value)" placeholder="Search…" class="w-full border rounded px-2 py-1 mb-4" />`,
+            `  <input type="text" value="{search}" oninput="setSearch(this.value)" placeholder="Search…" class="w-full border rounded px-2 py-1 mb-4" />`,
             `  <div class="flex gap-4 mb-2 text-sm text-gray-700">`,
-            `    <span>Total: {{ items.length }}</span>`,
-            `    <span>Visible: {{ filtered.length }}</span>`,
+            `    <span>Total: {items.length }}</span>`,
+            `    <span>Visible: {filtered.length }}</span>`,
             `  </div>`,
             `  <ul>`,
             `    <template pp-for="row in filtered">`,
-            `      <li class="flex items-center gap-2 mb-2">`,
-            `        <span class="{{ row.isActive ? 'text-gray-900' : 'text-gray-400 line-through' }}">{{ row.name }}</span>`,
+            `      <li key="{row.id}" class="flex items-center gap-2 mb-2">`,
+            `        <span class="{row.isActive ? 'text-gray-900' : 'text-gray-400 line-through'}">{row.name}</span>`,
             `      </li>`,
             `    </template>`,
             `  </ul>`,
@@ -173,12 +173,12 @@ export function registerCrudReadGuide(server, ctx) {
         ].join("\n");
         const feJs = [
             "<script>",
-            `const [items, setItems] = pphp.state([{ id: crypto.randomUUID?.() || 1, name: "Learn Prisma PHP", isActive: true }]);`,
-            `const [search, setSearch] = pphp.state("");`,
-            `const [filtered, setFiltered] = pphp.state(items.value);`,
-            `pphp.effect(() => {`,
-            `  const q = search.value.trim().toLowerCase();`,
-            `  setFiltered(q ? items.value.filter(r => (r.name ?? '').toLowerCase().includes(q)) : items.value);`,
+            `const [items, setItems] = pp.state([{ id: crypto.randomUUID?.() || 1, name: "Learn Prisma PHP", isActive: true }]);`,
+            `const [search, setSearch] = pp.state("");`,
+            `const [filtered, setFiltered] = pp.state(items);`,
+            `pp.effect(() => {`,
+            `  const q = search.trim().toLowerCase();`,
+            `  setFiltered(q ? items.filter(r => (r.name ?? '').toLowerCase().includes(q)) : items);`,
             `}, [search, items]);`,
             `// For API later: async function loadItems() { const res = await fetch('/api/items'); setItems(await res.json()); }`,
             "</script>",
@@ -187,7 +187,6 @@ export function registerCrudReadGuide(server, ctx) {
             prismaEnabled
                 ? "Both sections included: backend (Prisma) + frontend reference (Todo-style)."
                 : "Prisma is disabled → backend omitted; use the frontend Todo-style section.",
-            "Frontend templates avoid `.value` in templates; use `.value` in JS when reading/writing state.",
             `Filter operators (backend): ${Array.from(FILTER_OPERATORS).join(", ")}; relation ops: ${Array.from(RELATION_OPERATORS).join(", ")}.`,
         ];
         const payload = {

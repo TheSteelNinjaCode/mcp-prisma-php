@@ -32,7 +32,7 @@ const okAsText = (obj) => ({
     content: [{ type: "text", text: JSON.stringify(obj, null, 2) }],
 });
 export function registerCrudUpdateGuide(server, ctx) {
-    server.registerTool("pphp.crud.updateGuide", {
+    server.registerTool("pp.crud.updateGuide", {
         title: "Generate UPDATE pattern (backend + frontend template, separated)",
         description: "Outputs two sections: (1) Backend model approach (Prisma PHP) and (2) Frontend-only Todo edit pattern. Backend omitted if prisma=false.",
         inputSchema: InputShape,
@@ -133,27 +133,27 @@ export function registerCrudUpdateGuide(server, ctx) {
                 `<form onsubmit="submit${Model}(event)" class="grid gap-3 max-w-md">`,
                 `  <label class="grid gap-1">`,
                 `    <div class="text-sm text-gray-700">${whereUniqueKey}</div>`,
-                `    <input value="{{ form.${whereUniqueKey} ?? '' }}" readonly class="border rounded px-2 py-1 bg-gray-50" />`,
+                `    <input value="{form.${whereUniqueKey} ?? ''}" readonly class="border rounded px-2 py-1 bg-gray-50" />`,
                 `  </label>`,
                 ...backendFields.map((f) => {
                     const isBool = f.toLowerCase().startsWith("is");
                     return isBool
                         ? [
                             `  <label class="flex items-center gap-2">`,
-                            `    <input type="checkbox" onchange="patchForm({ ${f}: !!this.checked })" checked="{{ !!form.${f} }}" />`,
+                            `    <input type="checkbox" onchange="patchForm({ ${f}: !!this.checked })" checked="{!!form.${f}}" />`,
                             `    <span>${f}</span>`,
                             `  </label>`,
                         ].join("\n")
                         : [
                             `  <label class="grid gap-1">`,
                             `    <div class="text-sm text-gray-700">${f}</div>`,
-                            `    <input value="{{ form.${f} ?? '' }}" oninput="patchForm({ ${f}: this.value })" class="border rounded px-2 py-1" />`,
+                            `    <input value="{form.${f} ?? ''}" oninput="patchForm({ ${f}: this.value })" class="border rounded px-2 py-1" />`,
                             `  </label>`,
                         ].join("\n");
                 }),
                 `  <div class="flex gap-2">`,
-                `    <button type="submit" disabled="{{ saving }}" class="bg-green-600 text-white px-3 py-1 rounded">`,
-                `      {{ saving ? 'Saving…' : 'Save changes' }}`,
+                `    <button type="submit" disabled="{saving}" class="bg-green-600 text-white px-3 py-1 rounded">`,
+                `      {saving ? 'Saving…' : 'Save changes'}`,
                 `    </button>`,
                 `    <button type="button" onclick="cancelEdit()" class="bg-gray-300 px-3 py-1 rounded">Cancel</button>`,
                 `  </div>`,
@@ -167,16 +167,16 @@ export function registerCrudUpdateGuide(server, ctx) {
             ].join(", ");
             const js = [
                 "<script>",
-                `const [${plural}, set${Model}s] = pphp.state([]);`,
-                `const [form, setForm] = pphp.state({ ${defaultFormObj} });`,
-                `const [saving, setSaving] = pphp.state(false);`,
-                `const [errors, setErrors] = pphp.state({});`,
-                `export function cancelEdit() { setForm({ ${defaultFormObj} }); }`,
-                `export function patchForm(patch) { setForm(prev => ({ ...prev, ...patch })); }`,
-                `export async function submit${Model}(e) {`,
+                `const [${plural}, set${Model}s] = pp.state([]);`,
+                `const [form, setForm] = pp.state({ ${defaultFormObj} });`,
+                `const [saving, setSaving] = pp.state(false);`,
+                `const [errors, setErrors] = pp.state({});`,
+                `function cancelEdit() { setForm({ ${defaultFormObj} }); }`,
+                `function patchForm(patch) { setForm(prev => ({ ...prev, ...patch })); }`,
+                `async function submit${Model}(e) {`,
                 `  e?.preventDefault?.(); setSaving(true); setErrors({});`,
                 `  try {`,
-                `    const { response } = await pphp.fetchFunction('${fnName}', form);`,
+                `    const { response } = await pp.fetchFunction('${fnName}', form);`,
                 `    setSaving(false);`,
                 `    if (!response?.ok) { if (response?.errors) setErrors(response.errors); return; }`,
                 `    if (response?.row) set${Model}s(prev => prev.map(r => r.${whereUniqueKey} === response.row.${whereUniqueKey} ? response.row : r));`,
@@ -193,8 +193,8 @@ export function registerCrudUpdateGuide(server, ctx) {
             `  <h2 class="text-xl font-bold mb-4">Edit item</h2>`,
             `  <ul class="mb-4">`,
             `    <template pp-for="row in items">`,
-            `      <li class="flex items-center gap-2 mb-2">`,
-            `        <span class="flex-1">{{ row.name }}</span>`,
+            `      <li key="{row.id}" class="flex items-center gap-2 mb-2">`,
+            `        <span class="flex-1">{row.name}</span>`,
             `        <button onclick="startEdit(row)" class="text-blue-600 hover:underline">Edit</button>`,
             `      </li>`,
             `    </template>`,
@@ -202,14 +202,14 @@ export function registerCrudUpdateGuide(server, ctx) {
             `  <form pp-if="editingId" onsubmit="saveEdit()" class="grid gap-3">`,
             `    <label class="grid gap-1">`,
             `      <div class="text-sm text-gray-700">id</div>`,
-            `      <input pp-bind-value="edit.id" readonly class="border rounded px-2 py-1 bg-gray-50" />`,
+            `      <input value="edit.id" readonly class="border rounded px-2 py-1 bg-gray-50" />`,
             `    </label>`,
             `    <label class="grid gap-1">`,
             `      <div class="text-sm text-gray-700">name</div>`,
-            `      <input pp-bind-value="edit.name" oninput="setEdit({ ...edit.value, name: this.value })" class="border rounded px-2 py-1" />`,
+            `      <input value="{edit.name}" oninput="setEdit({ ...edit, name: this.value })" class="border rounded px-2 py-1" />`,
             `    </label>`,
             `    <label class="inline-flex items-center gap-2">`,
-            `      <input type="checkbox" pp-bind-checked="edit.isActive" onchange="setEdit({ ...edit.value, isActive: !!this.checked })" />`,
+            `      <input type="checkbox" checked="{edit.isActive}" onchange="setEdit({ ...edit, isActive: !!this.checked })" />`,
             `      <span class="text-sm">isActive</span>`,
             `    </label>`,
             `    <div class="flex gap-2">`,
@@ -221,17 +221,17 @@ export function registerCrudUpdateGuide(server, ctx) {
         ].join("\n");
         const feJs = [
             "<script>",
-            `const [items, setItems] = pphp.state([{ id: crypto.randomUUID?.() || 1, name: "Sample", isActive: true }]);`,
-            `const [editingId, setEditingId] = pphp.state("");`,
-            `const [edit, setEdit] = pphp.state({ id: "", name: "", isActive: true });`,
-            `export function startEdit(row) {`,
+            `const [items, setItems] = pp.state([{ id: crypto.randomUUID?.() || 1, name: "Sample", isActive: true }]);`,
+            `const [editingId, setEditingId] = pp.state("");`,
+            `const [edit, setEdit] = pp.state({ id: "", name: "", isActive: true });`,
+            `function startEdit(row) {`,
             `  setEditingId(String(row?.id ?? ""));`,
             `  setEdit({ id: row?.id ?? "", name: row?.name ?? "", isActive: !!row?.isActive });`,
             `}`,
-            `export function cancelEdit() { setEditingId(""); setEdit({ id: "", name: "", isActive: true }); }`,
-            `export function saveEdit() {`,
-            `  if (!editingId.value) return;`,
-            `  setItems(items.value.map(r => String(r.id) === String(edit.value.id) ? { ...r, ...edit.value } : r));`,
+            `function cancelEdit() { setEditingId(""); setEdit({ id: "", name: "", isActive: true }); }`,
+            `function saveEdit() {`,
+            `  if (!editingId) return;`,
+            `  setItems(items.map(r => String(r.id) === String(edit.id) ? { ...r, ...edit } : r));`,
             `  cancelEdit();`,
             `  // For API later: PUT /api/items/:id then reconcile list`,
             `}`,
@@ -241,7 +241,6 @@ export function registerCrudUpdateGuide(server, ctx) {
             prismaEnabled
                 ? "Both sections included: backend (Prisma) + frontend reference (Todo-style)."
                 : "Prisma is disabled → backend omitted; use the frontend Todo-style section.",
-            "Frontend templates avoid `.value` in templates; use `.value` in JS when reading/writing state.",
             "updateMany(): returns only { count } (no rows).",
         ];
         const hints = {

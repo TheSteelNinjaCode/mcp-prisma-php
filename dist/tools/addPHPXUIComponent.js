@@ -4,7 +4,7 @@ import { z } from "zod";
 import { safeExec } from "../utils/exec.js";
 import { ensurePrismaPhpProject } from "../utils/project.js";
 import { resolvePhpXUI, suggestPhpXUI, } from "../resources/phpxui-components.js";
-import { PPICONS_COMPONENTS as ICONS } from "../resources/ppicons-component.js";
+import { PPICONS_COMPONENTS as ICONS } from "../resources/ppicons-components.js";
 /** Resolve local node_modules/.bin/phpxui */
 function localBinPath(root) {
     const base = path.join(root, "node_modules", ".bin");
@@ -99,7 +99,7 @@ function createNamespaceHint(components) {
     return `Import with: use Lib\\PHPXUI\\{${components.join(", ")}}; then use as HTML tags in markup.`;
 }
 export function registerAddPHPXUIComponent(server, ctx) {
-    server.registerTool("pphp.component.addPHPXUI", {
+    server.registerTool("pp.component.addPHPXUI", {
         title: "Add Component (PHPXUI)",
         description: "Add one or more PHPXUI components (shadcn-style) such as Dialog, Toast, or Sheet. " +
             "Components are installed in the Lib\\PHPXUI namespace following PSR-4 autoloading. " +
