@@ -35,30 +35,82 @@
 
 ---
 
-## 🧭 MCP‑First Workflow (facts before code)
+## 🧭 MCP‑First Workflow (MANDATORY)
+
+### Before Writing ANY Code:
+
+1. **Detect & Describe**
 
 ```bash
-pp.component.addPHPXUI
-pp.component.addPPIcon
-pp.config.describe
-pp.detectProject
-pp.generateSwaggerDocs
-pp.config.get
-pp.listComponents
-pp.listRoutes
-pp.prisma.generate
-pp.npm.script
-pp.update.filterFiles
-pp.project.update
-pp.prisma.prepare
-pp.crud.createGuide
-pp.crud.readGuide
-pp.crud.updateGuide
-pp.crud.deleteGuide
-pp.route.create
-pp.phpxui.component.usage
-pp.ppicons.component.usage
+pp.detectProject        # Confirm project exists
+pp.config.describe      # Get project structure
 ```
+
+❌ NEVER proceed without these two steps.
+
+2. Check Components (if using PHPXUI/PPIcons)
+
+```bash
+pp.listComponents                    # List available components
+pp.component.addPHPXUI        # Add PHPXUI components (if needed)
+pp.phpxui.component.usage <Name>     # Get usage for specific phpxui component
+pp.component.addPPIcon    # Add PPIcons components (if needed)
+pp.ppicons.component.usage <Name>     # Get usage for specific ppicons component
+```
+
+3. Check Routes (if creating/modifying pages)
+
+```bash
+pp.listRoutes           # See existing routes
+pp.route.create        # Create new route
+```
+
+4. Check CRUD Guides (if implementing database operations)
+
+```bash
+pp.crud.createGuide     # For inserts
+pp.crud.readGuide       # For queries
+pp.crud.updateGuide     # For updates
+pp.crud.deleteGuide     # For deletions
+```
+
+Decision Tree:
+User Request
+│
+├─ "Create/show me..." → pp.detectProject → pp.config.describe → Check guides
+├─ "Use component X" → pp.phpxui.component.usage X
+├─ "Add route" → pp.listRoutes → pp.route.create
+├─ "Setup database" → pp.prisma.prepare
+└─ "Update schema" → pp.prisma.generate
+
+---
+
+## 📋 MCP Tools Quick Reference
+
+### 🚨 Always Run First
+
+- `pp.detectProject` + `pp.config.describe`
+
+### 🎨 Before Component Code
+
+- `pp.listComponents` → `pp.phpxui.component.usage <Name>`
+
+### 🗂️ Before Routing
+
+- `pp.listRoutes` → `pp.route.create`
+
+### 🗄️ Database Setup
+
+- New: `pp.prisma.prepare`
+- Update: `pp.prisma.generate`
+
+### 📖 Before CRUD Code
+
+- `pp.crud.[create|read|update|delete]Guide`
+
+### Tool Not Listed Above?
+
+**If a tool/API is not in this document, DO NOT USE IT.**
 
 ---
 
@@ -69,17 +121,17 @@ pp.ppicons.component.usage
 // 1) PHP imports + server logic
 use Lib\Prisma\Classes\Prisma;
 $prisma = Prisma::getInstance();
-$rows = $prisma->user->findMany();
+$users = $prisma->user->findMany();
 ?>
 <!-- 2) HTML markup -->
 <ul>
-  <template pp-for="row in rows">
-    <li key="{row.id}">{row.name}</li>
+  <template pp-for="user in users">
+    <li key="{user.id}">{user.name}</li>
   </template>
 </ul>
 <!-- 3) One script block at bottom -->
 <script>
-  const [users, setUsers] = pp.state(<?= json_encode($rows) ?>);
+  const [users, setUsers] = pp.state(<?= json_encode($users) ?>);
 </script>
 ```
 
@@ -182,12 +234,22 @@ $rows = $prisma->user->findMany();
 
 ```html
 <ul>
-  <template pp-for="item in items">
-    <li key="{item.id}">{item.name}</li>
+  <template pp-for="todo in todos">
+    <li key="{todo.id}">
+      {todo.name}
+      <button onclick="removeTodo(todo.id)">Remove</button>
+    </li>
   </template>
 </ul>
 <script>
-  const [items, setItems] = pp.state([]);
+  const [items, setItems] = pp.state([
+    { id: 1, name: "Item 1" },
+    { id: 2, name: "Item 2" },
+  ]);
+
+  function removeTodo(id) {
+    setItems(items.filter((item) => item.id !== id));
+  }
 </script>
 ```
 
@@ -221,16 +283,29 @@ $rows = $prisma->user->findMany();
 </script>
 ```
 
-**Common mistakes**
+**Common mistakes**⚠️
 
 - ❌ Passing non‑reactive snapshots in `deps`; pass the **state variable** itself (e.g., `[count]`).
 - ❌ Unconditional setters inside effects → infinite loops.
+- ❌ Writing component code without checking pp.phpxui.component.usage
+- ❌ Creating routes without running pp.listRoutes
+- ❌ Assuming project structure without pp.config.describe
+- ❌ Using bg-white, text-black instead of semantic tokens when PHPXUI installed
 
 ---
 
 ## 🧰 Fetching (`pp.fetchFunction`) Example
 
-```html
+```php
+<?php
+
+function resetPassword($data) {
+    // Simulate password reset logic
+    return ['message' => 'Password reset link sent to ' . $data->email];
+}
+
+?>
+
 <form onsubmit="submitForm(event)">
   <input name="email" type="email" required />
   <button type="submit">Send</button>
@@ -258,26 +333,40 @@ $rows = $prisma->user->findMany();
 ```html
 <input
   type="checkbox"
-  checked="{edit.isActive}"
-  onchange="setEdit({ ...edit, isActive: !!event.target.checked })"
+  checked="{isActive}"
+  onchange="setIsActive(event.target.checked)"
 />
 <script>
-  const [edit, setEdit] = pp.state({ isActive: false });
+  const [isActive, setIsActive] = pp.state(false);
 </script>
 ```
+
+## ✅ Two‑Way Binding Example
+
+```html
+<input
+  type="text"
+  value="{name}"
+  oninput="setName(event.target.value)"
+/>
+<script>
+  const [name, setName] = pp.state("");
+</script>
 
 ---
 
 ## ❌ Error Patterns to Refuse
 
+### MCP Tool Violations:
+
+- Writing code **before** running `pp.detectProject` + `pp.config.describe`
+- Using PHPXUI components without checking `pp.phpxui.component.usage`
+- Creating routes without checking `pp.listRoutes`
+- Assuming file paths without consulting `pp.config.describe`
+- Using raw Tailwind colors when PHPXUI is installed (`checks.phpxui.installed === true`)
 - Using any API **not listed** in _Allowed Runtime Surface_.
 - Putting `pp-for` directly on non‑`<template>` elements.
 - Using ternaries for show/hide instead of `hidden`.
 - Missing quotes in string ternaries; if detected → **emit a warning and stop**.
 - Multiple `<script>` blocks or scripts not at the bottom.
 - Unstable/random keys in lists.
-
-## Appendix A — PHPXUI Quick Notes
-
-- Prefer semantic tokens when available.
-- Use `pp.phpxui.component.usage <Name>` to copy correct component skeletons.
