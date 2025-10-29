@@ -38,10 +38,26 @@
 ## 🧭 MCP‑First Workflow (facts before code)
 
 ```bash
+pp.component.addPHPXUI
+pp.component.addPPIcon
+pp.config.describe
 pp.detectProject
-pp.config.describe     # If checks.phpxui.installed === true → use semantic tokens
-pp.listComponents      # Optional
-pp.listRoutes          # Optional
+pp.generateSwaggerDocs
+pp.config.get
+pp.listComponents
+pp.listRoutes
+pp.prisma.generate
+pp.npm.script
+pp.update.filterFiles
+pp.project.update
+pp.prisma.prepare
+pp.crud.createGuide
+pp.crud.readGuide
+pp.crud.updateGuide
+pp.crud.deleteGuide
+pp.route.create
+pp.phpxui.component.usage
+pp.ppicons.component.usage
 ```
 
 ---
@@ -243,7 +259,7 @@ $rows = $prisma->user->findMany();
 <input
   type="checkbox"
   checked="{edit.isActive}"
-  onchange="(e => setEdit({ ...edit, isActive: !!e.target.checked }))(event)"
+  onchange="setEdit({ ...edit, isActive: !!event.target.checked })"
 />
 <script>
   const [edit, setEdit] = pp.state({ isActive: false });
@@ -261,31 +277,7 @@ $rows = $prisma->user->findMany();
 - Multiple `<script>` blocks or scripts not at the bottom.
 - Unstable/random keys in lists.
 
----
-
-## ✅ “Lint‑me” Checklist for AI Outputs
-
-- [ ] Uses **only** the _Allowed Runtime Surface_ and listed directives.
-- [ ] File order: PHP → HTML → one bottom `<script>`.
-- [ ] Visibility via `hidden`; ternaries only for text/attrs.
-- [ ] Stable keys in loops (`key="{id}"`).
-- [ ] If PHPXUI installed → semantic tokens (no raw grays).
-- [ ] Refs init with `pp.ref(null)` and safely accessed.
-- [ ] Object updates: `{ ...state, patch }` pattern.
-- [ ] Ternary branches are **properly quoted** when strings.
-- [ ] No more than one `<script>`; placed at the bottom.
-
----
-
 ## Appendix A — PHPXUI Quick Notes
 
 - Prefer semantic tokens when available.
-- Use `pp.phpxuiComponentUsage <Name>` to copy correct component skeletons.
-
-## Appendix B — Route & DB (Quick Reference)
-
-```bash
-pp.route.create --route "dashboard"
-pp.prisma.prepare     # full DB flow
-pp.prisma.generate    # client regen only
-```
+- Use `pp.phpxui.component.usage <Name>` to copy correct component skeletons.
