@@ -108,7 +108,7 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<Button variant="outline" onclick="setOpenDialog(true)">Open Dialog</Button>
 
-<Dialog open="openDialog">
+<Dialog open="{openDialog}" onOpenChange="{setOpenDialog}">
   <form onsubmit="handleSubmit(event)">
     <DialogContent${contentWidth}>
       <DialogHeader>
@@ -262,7 +262,7 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<Button variant="outline" onclick="setOpenSheet(true)">Open</Button>
 
-<Sheet open="openSheet">
+<Sheet open="{openSheet}" onOpenChange="{setOpenSheet}">
   <form onsubmit="handleSheetSubmit(event)">
     <SheetContent>
       <SheetHeader>
@@ -472,7 +472,7 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<Button variant="outline" onclick="setOpenAlert(true)">Show Dialog</Button>
 
-<AlertDialog open="openAlert">
+<AlertDialog open="{openAlert}" onOpenChange="{setOpenAlert}">
   <AlertDialogContent>
     <AlertDialogHeader>
       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -547,7 +547,7 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" name="isActive" checked="true" />
+  <ToggleSwitch id="user-is-active" name="isActive" checked="{true}" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 notes: [
@@ -566,7 +566,7 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-2">
-  <ToggleSwitch id="user-is-active" name="isActive" checked="isActive" onchange="setIsActive(!isActive)" />
+  <ToggleSwitch id="user-is-active" name="isActive" checked="{isActive}" onchange="setIsActive(!isActive)" />
   <Label for="user-is-active">Active</Label>
 </div>`,
                 js: `<script>
@@ -1331,7 +1331,7 @@ use Lib\\PHPXUI\\{
   </div>
 
   <!-- While loading -->
-  <div pp-if="loading" class="flex items-center space-x-4">
+  <div hidden="{loading}" class="flex items-center space-x-4">
     <Skeleton class="h-12 w-12 rounded-full" />
     <div class="space-y-2">
       <Skeleton class="h-4 w-[250px]" />
@@ -1340,7 +1340,7 @@ use Lib\\PHPXUI\\{
   </div>
 
   <!-- Loaded content (example only) -->
-  <div pp-else class="flex items-center gap-4">
+  <div hidden="{!loading}" class="flex items-center gap-4">
     <img src="https://github.com/shadcn.png" alt="@shadcn" class="h-12 w-12 rounded-full" />
     <div>
       <p class="font-medium leading-none">@shadcn</p>
@@ -1357,7 +1357,7 @@ use Lib\\PHPXUI\\{
 </script>`,
                 notes: [
                     "Use app state to toggle skeletons while fetching data.",
-                    "Skeleton remains visual-only; swapping views is handled by pp-if.",
+                    "Skeleton remains visual-only; swapping views is handled by hidden.",
                 ],
             },
         },
@@ -1466,7 +1466,7 @@ use Lib\\PHPXUI\\{
   </div>
 
   <div class="flex items-start gap-3">
-    <Checkbox id="terms-2" name="terms2" checked="true" />
+    <Checkbox id="terms-2" name="terms2" checked="{true}" />
     <div class="grid gap-2">
       <Label for="terms-2">Accept terms and conditions</Label>
       <p class="text-muted-foreground text-sm">
@@ -1508,7 +1508,7 @@ use Lib\\PHPXUI\\{
 
 ?>`,
                 html: `<div class="flex items-center gap-3">
-  <Checkbox id="is-active" name="isActive" checked="isActive" onchange="setIsActive(!isActive)" />
+  <Checkbox id="is-active" name="isActive" checked="{isActive}" onchange="setIsActive(!isActive)" />
   <Label for="is-active">Active</Label>
 </div>`,
                 js: `<script>
@@ -1628,7 +1628,7 @@ use Lib\\PHPXUI\\{
 };
 
 ?>`,
-                html: `<Select value="fruit" onValueChange="handleFruitChange">
+                html: `<Select value="fruit" open="{openSelect}" onValueChange="{setFruit}" onOpenChange="{setOpenSelect}">
   <SelectTrigger class="w-[200px]">
     <SelectValue placeholder="Pick one…" />
   </SelectTrigger>
@@ -1645,12 +1645,7 @@ use Lib\\PHPXUI\\{
                 js: `<script>
   // Primitive string state for the selected value
   const [fruit, setFruit] = pp.state("");
-
-  // The component calls this with the new string value
-  function handleFruitChange(nextValue) {
-    // Values are strings; normalize/convert if needed
-    setFruit(nextValue);
-  }
+  const [openSelect, setOpenSelect] = pp.state(false);
 </script>`,
                 notes: [
                     'Controlled: pass value="fruit" and onValueChange="handleFruitChange".',
@@ -1674,7 +1669,7 @@ use Lib\\PHPXUI\\{
 ?>`,
                 html: `<button class="mb-2 text-sm underline" onclick="setOpenSel(true)">Open programmatically</button>
 
-<Select open="openSel" onOpenChange="setOpenSel" value="size" onValueChange="setSize">
+<Select open="{openSel}" onOpenChange="{setOpenSel}" value="size" onValueChange="{setSize}">
   <SelectTrigger size="sm" class="w-[160px]">
     <SelectValue placeholder="Size" />
   </SelectTrigger>

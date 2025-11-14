@@ -201,7 +201,7 @@ export function registerCrudCreateGuide(server, ctx) {
                 `    <button type="submit" disabled="{saving}" class="bg-blue-600 text-white px-3 py-1 rounded">`,
                 `      {saving ? 'Saving…' : 'Save'}`,
                 `    </button>`,
-                `    <span class="text-red-600 text-sm" pp-if="Object.keys(errors).length">Check errors</span>`,
+                `    <span class="text-red-600 text-sm" hidden="{!Object.keys(errors).length}">Check errors</span>`,
                 `  </div>`,
                 `</form>`,
             ].join("\n");
