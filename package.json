@@ -1,6 +1,6 @@
 {
   "name": "mcp-prisma-php",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Prisma PHP MCP CLI",
   "type": "module",
   "bin": {

@@ -73,6 +73,78 @@
 
 ---
 
+### ⚠️ CRITICAL: MCP Server vs. MCP Tools (Don't Confuse These!)
+
+**There are TWO different concepts with "MCP" in the name:**
+
+| Concept                | What It Is                                                         | How It Affects You                         |
+| ---------------------- | ------------------------------------------------------------------ | ------------------------------------------ |
+| **MCP Server Feature** | A project feature in `prisma-php.json` (`"mcp": true/false`)       | Internal project config - NOT your concern |
+| **MCP Tools**          | External AI tools (`pp.detectProject`, `pp.config.describe`, etc.) | **YOU MUST ALWAYS USE THESE**              |
+
+---
+
+**🚨 CRITICAL DISTINCTION:**
+
+When you run `pp.config.describe` and see this in the project config:
+
+```json
+{
+  "mcp": false,
+  "prisma": false,
+  "tailwindcss": true
+}
+```
+
+**This does NOT mean:**
+
+- ❌ "Don't use MCP tools"
+- ❌ "MCP tools are unavailable"
+- ❌ "Skip pp.detectProject and pp.config.describe"
+
+**This ONLY means:**
+
+- ✅ The MCP Server feature is not installed in THIS PROJECT
+- ✅ You STILL MUST use all MCP tools (pp.detectProject, pp.config.describe, etc.)
+- ✅ MCP tools are ALWAYS available regardless of project config
+
+---
+
+**Think of it like this:**
+
+- **MCP Server** (`"mcp": true/false`) = A feature the user can install in their project (like websocket or docker)
+- **MCP Tools** (`pp.*`) = Your external toolkit to interact with ANY Prisma PHP project
+
+**The project's `"mcp": false` has ZERO impact on your requirement to use MCP tools.**
+
+---
+
+**Example of correct interpretation:**
+
+```json
+{
+  "prisma": false,
+  "tailwindcss": true,
+  "mcp": false
+}
+```
+
+**You should interpret this as:**
+
+- "This project does NOT have Prisma ORM installed" → Don't generate Prisma code
+- "This project DOES have Tailwind installed" → Use Tailwind classes
+- "This project does NOT have MCP Server installed" → Internal feature flag, ignore it
+
+**You should NOT interpret as:**
+
+- ❌ "Don't use pp.detectProject"
+- ❌ "Don't use pp.config.describe"
+- ❌ "Don't consult MCP tools"
+
+**YOU MUST STILL RUN ALL MCP TOOLS REGARDLESS OF THE `"mcp"` FIELD VALUE.**
+
+---
+
 ### 🔴 ALWAYS Run First (Every Single Time)
 
 **Before writing ANY code or answering ANY project-specific question:**
