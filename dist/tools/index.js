@@ -7,7 +7,6 @@ import { registerDescribeConfig } from "./describeConfig.js";
 import { registerUpdateFilterFiles } from "./updateFilterFiles.js";
 import { registerUpdateProject } from "./updateProject.js";
 import { registerPrismaGenerate } from "./prismaGenerate.js";
-import { registerRunNpmScript } from "./runNpmScript.js";
 import { registerListRoutes } from "./listRoutes.js";
 import { registerAddPPIconComponent } from "./addPPIconComponent.js";
 import { registerPrismaPrepare } from "./prismaPrepare.js";
@@ -36,7 +35,6 @@ export function registerTools(server, ctx) {
     registerPPIconsComponentUsage(server, ctx);
     registerPrismaGenerate(server, ctx);
     registerPrismaPrepare(server, ctx);
-    registerRunNpmScript(server, ctx);
     registerUpdateFilterFiles(server, ctx);
     registerUpdateProject(server, ctx);
 }

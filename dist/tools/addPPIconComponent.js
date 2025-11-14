@@ -122,9 +122,7 @@ function createNamespaceHint(icons, isAll = false) {
 export function registerAddPPIconComponent(server, ctx) {
     server.registerTool("pp.component.addPPIcon", {
         title: "Add Component (PPIcons)",
-        description: "Add one or more icon components from the PPIcons catalogue (lucide-style). " +
-            "Icons are installed in the Lib\\PPIcons namespace following PSR-4 autoloading. " +
-            "Use imports like: use Lib\\PPIcons\\{Icon1, Icon2}; then use <IconName /> as HTML tags in markup.",
+        description: "Add one or more icon components from the PPIcons catalogue (lucide-style). Icons are installed in the Lib\\PPIcons namespace following PSR-4 autoloading. Use imports like: use Lib\\PPIcons\\{Icon1, Icon2}; then use <IconName /> as HTML tags in markup.",
         inputSchema: {
             // Provide either `names` or set `all: true`
             names: z.union([z.string(), z.array(z.string())]).optional(),

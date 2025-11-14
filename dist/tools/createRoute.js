@@ -63,9 +63,7 @@ function parseRoutePattern(route) {
 export function registerCreateRoute(server, ctx) {
     server.registerTool("pp.route.create", {
         title: "Create Route",
-        description: "Creates routes following Prisma PHP conventions. Supports static routes, route groups (admin), " +
-            "private folders (_components), dynamic routes ([slug], [...slug]), and API handlers. " +
-            "Creates index.php (pages) or route.php (APIs) based on backendOnly config.",
+        description: "Creates routes following Prisma PHP conventions. Supports static routes, route groups (admin), private folders (_components), dynamic routes ([slug], [...slug]), and API handlers. Creates index.php (pages) or route.php (APIs) based on backendOnly config.",
         inputSchema: {
             route: z.string(), // e.g., "dashboard", "(admin)/users", "blog/[slug]", "_components/Card"
             title: z.string().optional(),

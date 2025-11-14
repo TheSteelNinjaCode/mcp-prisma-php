@@ -1,1 +1,1 @@
-{"version":3,"file":"createRoute.d.ts","sourceRoot":"","sources":["../../src/tools/createRoute.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AACzE,OAAO,KAAK,EAAE,GAAG,EAAE,MAAM,aAAa,CAAC;AAmEvC,wBAAgB,mBAAmB,CAAC,MAAM,EAAE,SAAS,EAAE,GAAG,EAAE,GAAG,QAgU9D"}
+{"version":3,"file":"createRoute.d.ts","sourceRoot":"","sources":["../../src/tools/createRoute.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AACzE,OAAO,KAAK,EAAE,GAAG,EAAE,MAAM,aAAa,CAAC;AAmEvC,wBAAgB,mBAAmB,CAAC,MAAM,EAAE,SAAS,EAAE,GAAG,EAAE,GAAG,QA8T9D"}

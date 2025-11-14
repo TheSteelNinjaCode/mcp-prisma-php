@@ -101,9 +101,7 @@ function createNamespaceHint(components) {
 export function registerAddPHPXUIComponent(server, ctx) {
     server.registerTool("pp.component.addPHPXUI", {
         title: "Add Component (PHPXUI)",
-        description: "Add one or more PHPXUI components (shadcn-style) such as Dialog, Toast, or Sheet. " +
-            "Components are installed in the Lib\\PHPXUI namespace following PSR-4 autoloading. " +
-            "Use imports like: use Lib\\PHPXUI\\{Component1, Component2}; then use as HTML tags in markup.",
+        description: "Add one or more PHPXUI components (shadcn-style) such as Dialog, Toast, or Sheet. Components are installed in the Lib\\PHPXUI namespace following PSR-4 autoloading. Use imports like: use Lib\\PHPXUI\\{Component1, Component2}; then use as HTML tags in markup.",
         inputSchema: {
             // Back-compat: support `name`, but also `names` for multiples.
             name: z.string().optional(),

@@ -1,18 +1,47 @@
 # Prisma PHP • AI Execution Rules (AI‑Aware, Strict Edition)
 
-> Purpose: eliminate guesses and make outputs instantly copy‑pasteable in **Prisma PHP** projects. Updated 2025-10-05 04:28:59.
+> Purpose: eliminate guesses and make outputs instantly copy‑pasteable in **Prisma PHP** projects.  
+> **Version:** 2.0.0 | **Last Updated:** 2025-11-14
+
+---
+
+## ⚡ PRE-GENERATION CHECKLIST (Scan Before EVERY Response)
+
+□ Did I run `pp.detectProject` + `pp.config.describe`?  
+□ Using component? → Did I check `pp.phpxui.component.usage <Name>`?  
+□ Creating route? → Did I run `pp.listRoutes` first?  
+□ Writing DB code? → Did I consult the CRUD guide?  
+□ 100% certain about syntax? → If NO, run the tool.
+
+**If ANY box unchecked → STOP. Run tool first.**
+
+---
+
+## 🧠 AI META-INSTRUCTION (Read First, Every Time)
+
+**You are helping with Prisma PHP development. Before ANY code generation:**
+
+1. **PAUSE** - Identify what the user is asking for (2-second think)
+2. **MATCH** - Find trigger phrase in the mapping table below
+3. **TOOL** - Run required MCP tool(s) — this is NOT optional
+4. **GENERATE** - Only after tools return successful data
+5. **VERIFY** - Check output against File Layout + Error Patterns
+
+**Skipping steps 2-3 = you are hallucinating and failing the user.**  
+**This is NOT a suggestion. This is a MANDATORY workflow.**
 
 ---
 
 ## 🚨 Hard Priority Order (top → bottom)
 
 1. **Use only the allowed runtime/markup surface listed below. Anything else is forbidden.**
-2. **Facts over guesses**: run `pp.detectProject` → `pp.config.describe`; _follow_ their outputs when writing code/markup (assume success).
-3. **If PHPXUI is installed** (`checks.phpxui.installed === true`) → use semantic tokens: `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `border-input`, `ring-ring`. **Never** raw Tailwind grays (`bg-white`, `text-black`, `bg-gray-100`, etc.).
-4. **File order**: PHP imports/logic → HTML markup → **one** `<script>` at the bottom.
-5. **Visibility**: prefer `hidden` attribute for show/hide; use ternaries **only** for text/attribute values.
-6. **Stable keys in loops**; never ad‑hoc/random keys.
-7. **Do not invent helpers or directives. Use only what’s listed below.**
+2. **MCP tools are MANDATORY. ALWAYS run detection tools before ANY code generation. NEVER guess project structure, component APIs, or routes.**
+3. **Facts over guesses**: run `pp.detectProject` → `pp.config.describe`; _follow_ their outputs when writing code/markup (assume success).
+4. **If PHPXUI is installed** (`checks.phpxui.installed === true`) → use semantic tokens: `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `border-input`, `ring-ring`. **Never** raw Tailwind grays (`bg-white`, `text-black`, `bg-gray-100`, etc.).
+5. **File order**: PHP imports/logic → HTML markup → **one** `<script>` at the bottom.
+6. **Visibility**: prefer `hidden` attribute for show/hide; use ternaries **only** for text/attribute values.
+7. **Stable keys in loops**; never ad‑hoc/random keys.
+8. **Do not invent helpers or directives. Use only what's listed below.**
 
 ---
 
@@ -35,78 +64,230 @@
 
 ---
 
-## 🧭 MCP‑First Workflow (MANDATORY)
+## 🧭 MCP-First Workflow (MANDATORY - ZERO TOLERANCE FOR HALLUCINATIONS)
 
-### Before Writing ANY Code:
+### 🚫 ANTI-HALLUCINATION RULE
 
-1. **Detect & Describe**
-
-```bash
-pp.detectProject        # Confirm project exists
-pp.config.describe      # Get project structure
-```
-
-❌ NEVER proceed without these two steps.
-
-2. Check Components (if using PHPXUI/PPIcons)
-
-```bash
-pp.listComponents                    # List available components
-pp.component.addPHPXUI        # Add PHPXUI components (if needed)
-pp.phpxui.component.usage <Name>     # Get usage for specific phpxui component
-pp.component.addPPIcon    # Add PPIcons components (if needed)
-pp.ppicons.component.usage <Name>     # Get usage for specific ppicons component
-```
-
-3. Check Routes (if creating/modifying pages)
-
-```bash
-pp.listRoutes           # See existing routes
-pp.route.create        # Create new route
-```
-
-4. Check CRUD Guides (if implementing database operations)
-
-```bash
-pp.crud.createGuide     # For inserts
-pp.crud.readGuide       # For queries
-pp.crud.updateGuide     # For updates
-pp.crud.deleteGuide     # For deletions
-```
-
-Decision Tree:
-User Request
-│
-├─ "Create/show me..." → pp.detectProject → pp.config.describe → Check guides
-├─ "Use component X" → pp.phpxui.component.usage X
-├─ "Add route" → pp.listRoutes → pp.route.create
-├─ "Setup database" → pp.prisma.prepare
-└─ "Update schema" → pp.prisma.generate
+**YOU MUST NOT generate any Prisma PHP code without first consulting the appropriate MCP tools.**  
+**If you guess project structure, component APIs, or routes → you FAIL.**
 
 ---
 
-## 📋 MCP Tools Quick Reference
+### 🔴 ALWAYS Run First (Every Single Time)
 
-### 🚨 Always Run First
+**Before writing ANY code or answering ANY project-specific question:**
 
-- `pp.detectProject` + `pp.config.describe`
+```bash
+pp.detectProject        # Confirms prisma-php.json exists
+pp.config.describe      # Gets project structure, enabled features, paths
+```
 
-### 🎨 Before Component Code
+**Why:** These two tools prevent 90% of hallucinations. They tell you:
 
-- `pp.listComponents` → `pp.phpxui.component.usage <Name>`
+- If Prisma ORM is enabled
+- If PHPXUI/Tailwind is installed
+- If swaggerDocs is enabled
+- Correct file paths for pages/api/css
+- Whether backend-only mode is on
 
-### 🗂️ Before Routing
+**❌ NEVER:**
 
-- `pp.listRoutes` → `pp.route.create`
+- Assume Prisma is available
+- Guess component import paths
+- Write routes without knowing the routing convention
+- Use PHPXUI components without checking availability
 
-### 🗄️ Database Setup
+---
 
-- New: `pp.prisma.prepare`
-- Update: `pp.prisma.generate`
+### 📋 Complete Tool Reference (Alphabetical by Category)
 
-### 📖 Before CRUD Code
+#### **🔍 Project Detection & Config (Run FIRST)**
 
-- `pp.crud.[create|read|update|delete]Guide`
+| Tool                 | When to Use                                      | Returns                                          |
+| -------------------- | ------------------------------------------------ | ------------------------------------------------ |
+| `pp.detectProject`   | **Always first** - Before any code generation    | Boolean - project exists                         |
+| `pp.config.describe` | **Always second** - After detection              | Project summary: paths, enabled features, checks |
+| `pp.config.get`      | When you need raw JSON config for advanced logic | Full prisma-php.json contents                    |
+
+---
+
+#### **🎨 Component Installation & Usage**
+
+| Tool                         | When to Use                              | Example Trigger                |
+| ---------------------------- | ---------------------------------------- | ------------------------------ |
+| `pp.listComponents`          | Before using ANY PHPXUI component        | "Show me available components" |
+| `pp.component.addPHPXUI`     | User requests Dialog, Toast, Sheet, etc. | "Add a dialog component"       |
+| `pp.phpxui.component.usage`  | **ALWAYS before writing PHPXUI code**    | "How do I use Dialog?"         |
+| `pp.component.addPPIcon`     | User needs icons (Lucide-style)          | "Add a menu icon"              |
+| `pp.ppicons.component.usage` | **ALWAYS before writing icon code**      | "Show me how to use icons"     |
+
+**🚨 CRITICAL:** You MUST run `pp.phpxui.component.usage <ComponentName>` before generating ANY component code. The usage tool returns:
+
+- Correct PHP import syntax
+- Required HTML structure
+- Optional JavaScript patterns
+- Multiple usage patterns (e.g., Dialog with trigger vs controlled)
+
+**❌ NEVER:**
+
+- Guess component prop names
+- Invent HTML structure
+- Write PHPXUI code without consulting usage tool
+
+---
+
+#### **🗺️ Routing & Pages**
+
+| Tool              | When to Use                                       | Example Trigger                                           |
+| ----------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| `pp.listRoutes`   | Before creating routes or showing available pages | "What routes exist?"                                      |
+| `pp.route.create` | User wants new page or API endpoint               | "Create /admin/users page", "Add API endpoint /api/posts" |
+
+**`pp.route.create` supports:**
+
+- Static routes: `/about` → `src/app/about/index.php`
+- Route groups: `/admin/users` → `src/app/admin/users/index.php`
+- Dynamic routes: `/posts/[id]` → `src/app/posts/[id]/index.php`
+- Catch-all: `/docs/[...slug]` → `src/app/docs/[...slug]/index.php`
+- API routes: `/api/users` → `src/app/api/users/route.php` (if backendOnly enabled)
+- Private folders: `/_components` (ignored by router)
+
+**🚨 MUST RUN** `pp.listRoutes` before creating routes to avoid duplicates.
+
+---
+
+#### **🗄️ Database & Prisma ORM**
+
+| Tool                  | When to Use                                               | Example Trigger                            |
+| --------------------- | --------------------------------------------------------- | ------------------------------------------ |
+| `pp.prisma.prepare`   | **Initial DB setup** - First time or after schema changes | "Setup my database", "I changed my schema" |
+| `pp.prisma.generate`  | **After** schema updates (when Prisma already configured) | "Regenerate Prisma client"                 |
+| `pp.crud.createGuide` | User needs to INSERT records                              | "How do I create a user?"                  |
+| `pp.crud.readGuide`   | User needs to SELECT/QUERY records                        | "Show me how to fetch posts"               |
+| `pp.crud.updateGuide` | User needs to UPDATE records                              | "How do I edit a todo?"                    |
+| `pp.crud.deleteGuide` | User needs to DELETE records                              | "How do I remove items?"                   |
+
+**Decision flow:**
+User mentions database/Prisma
+
+↓
+
+1. Run pp.config.describe
+
+2. Check if prisma: true
+
+3. If true:
+
+   - New setup? → pp.prisma.prepare
+
+   - Schema change? → pp.prisma.generate
+
+   - Need CRUD? → Run appropriate guide tool
+
+4. If false:
+   - Offer frontend-only patterns (tools still return frontend examples)
+
+**⚠️ IMPORTANT:**
+
+- `pp.prisma.prepare` is the **all-in-one** setup tool (aligns provider, runs migrations, generates client)
+- `pp.prisma.generate` is for **regeneration only** (faster, no migrations)
+- CRUD guides return **both** backend (Prisma) and frontend patterns
+
+---
+
+#### **📦 Project Maintenance**
+
+| Tool                     | When to Use                                      | Example Trigger                                 |
+| ------------------------ | ------------------------------------------------ | ----------------------------------------------- |
+| `pp.project.update`      | User wants to update Prisma PHP framework        | "Update my project"                             |
+| `pp.update.filterFiles`  | Before bulk file updates (checks excludeFiles)   | Internal use - before writing to multiple files |
+| `pp.generateSwaggerDocs` | After API route changes (if swaggerDocs enabled) | "Update my API docs"                            |
+
+---
+
+### 🎯 Decision Tree (Exhaustive)
+
+User Request
+│
+├─ ANY code generation
+│ └─ 🔴 STOP → Run pp.detectProject + pp.config.describe first
+│
+├─ "Create/add/build a page"
+│ └─ pp.listRoutes → pp.route.create
+│
+├─ "Use/add Dialog/Toast/Sheet" (PHPXUI)
+│ └─ pp.listComponents → pp.component.addPHPXUI → pp.phpxui.component.usage
+│
+├─ "Add/use icons"
+│ └─ pp.component.addPPIcon → pp.ppicons.component.usage
+│
+├─ "Setup database" / "First time Prisma"
+│ └─ pp.prisma.prepare
+│
+├─ "I changed my schema" / "Regenerate Prisma"
+│ └─ pp.prisma.generate
+│
+├─ "How do I create/insert/add records?"
+│ └─ pp.crud.createGuide
+│
+├─ "How do I fetch/query/get records?"
+│ └─ pp.crud.readGuide
+│
+├─ "How do I update/edit records?"
+│ └─ pp.crud.updateGuide
+│
+├─ "How do I delete/remove records?"
+│ └─ pp.crud.deleteGuide
+│
+├─ "Update Prisma PHP"
+│ └─ pp.project.update
+│
+├─ "Update API docs" / "Generate Swagger"
+│ └─ Check swaggerDocs enabled → pp.generateSwaggerDocs
+│
+└─ "What components are available?"
+└─ pp.listComponents
+
+---
+
+### ⚡ Trigger Phrases → Tool Mapping
+
+| When user says...                                       | You MUST run...                     |
+| ------------------------------------------------------- | ----------------------------------- |
+| "create a page", "add route", "new API endpoint"        | `pp.listRoutes` → `pp.route.create` |
+| "use Dialog", "add Toast", any PHPXUI component name    | `pp.phpxui.component.usage <Name>`  |
+| "add icon", "use icons"                                 | `pp.ppicons.component.usage <Name>` |
+| "setup database", "configure Prisma", "first migration" | `pp.prisma.prepare`                 |
+| "regenerate", "I changed schema.prisma"                 | `pp.prisma.generate`                |
+| "how do I insert", "create records"                     | `pp.crud.createGuide`               |
+| "how do I query", "fetch data", "get records"           | `pp.crud.readGuide`                 |
+| "how do I update", "edit records"                       | `pp.crud.updateGuide`               |
+| "how do I delete", "remove records"                     | `pp.crud.deleteGuide`               |
+| "update framework", "upgrade Prisma PHP"                | `pp.project.update`                 |
+| "what components exist"                                 | `pp.listComponents`                 |
+| "show me available routes"                              | `pp.listRoutes`                     |
+
+**🚨 If a trigger phrase appears and you don't use the corresponding tool → YOU FAIL.**
+
+---
+
+### 🔗 Tool Dependency Chains (Never Skip Steps)
+
+1. **Adding PHPXUI Component:**  
+   `pp.listComponents` → `pp.component.addPHPXUI` → `pp.phpxui.component.usage`
+
+2. **Creating Routes:**  
+   `pp.listRoutes` → `pp.route.create`
+
+3. **Database Setup:**  
+   `pp.config.describe` (verify prisma: true) → `pp.prisma.prepare`
+
+4. **Using Icons:**  
+   `pp.component.addPPIcon` → `pp.ppicons.component.usage`
+
+## **Skipping a step in a chain = hallucination risk.**
+
+---
 
 ### Tool Not Listed Above?
 
@@ -355,18 +536,56 @@ function resetPassword($data) {
 
 ---
 
-## ❌ Error Patterns to Refuse
+## ❌ Error Patterns to Refuse (ZERO TOLERANCE)
 
-### MCP Tool Violations:
+### 🔴 MCP Tool Violations (Immediate Failure):
 
-- Writing code **before** running `pp.detectProject` + `pp.config.describe`
-- Using PHPXUI components without checking `pp.phpxui.component.usage`
-- Creating routes without checking `pp.listRoutes`
-- Assuming file paths without consulting `pp.config.describe`
-- Using raw Tailwind colors when PHPXUI is installed (`checks.phpxui.installed === true`)
+1. **Writing ANY code before running** `pp.detectProject` + `pp.config.describe`
+2. **Using PHPXUI components without running** `pp.phpxui.component.usage <Name>`
+3. **Creating routes without running** `pp.listRoutes` first
+4. **Assuming Prisma is available** without checking `pp.config.describe` output
+5. **Guessing component import syntax** instead of consulting usage tools
+6. **Writing database code without consulting** CRUD guide tools
+7. **Inventing component props/attributes** not shown in usage tool output
+8. **Creating duplicate routes** (prevented by running `pp.listRoutes`)
+9. **Using raw Tailwind colors** when `checks.phpxui.installed === true` (use semantic tokens)
+10. **Generating API routes** without checking if `backendOnly` is enabled
+
+### 🔴 Runtime/Markup Violations:
+
 - Using any API **not listed** in _Allowed Runtime Surface_.
 - Putting `pp-for` directly on non‑`<template>` elements.
 - Using ternaries for show/hide instead of `hidden`.
 - Missing quotes in string ternaries; if detected → **emit a warning and stop**.
 - Multiple `<script>` blocks or scripts not at the bottom.
 - Unstable/random keys in lists.
+
+### 🔴 File Structure Violations:
+
+- PHP imports/logic not at the top
+- HTML markup not in the middle
+- `<script>` block not at the bottom (or multiple script blocks)
+- Assuming file paths without consulting `pp.config.describe`
+
+---
+
+### ✅ Correct Pattern (ALWAYS):
+
+1. **Detect** → `pp.detectProject`
+2. **Describe** → `pp.config.describe`
+3. **Consult specific tools** (routes/components/CRUD)
+4. **Generate code** using tool outputs
+5. **Verify** structure matches Prisma PHP conventions
+```
+
+---
+
+## 🔧 Troubleshooting (If You See These Errors...)
+
+| Error/Issue                                 | Likely Cause                        | Fix                             |
+| ------------------------------------------- | ----------------------------------- | ------------------------------- |
+| "Class not found: Lib\PHPXUI\Dialog"        | Didn't run `pp.component.addPHPXUI` | Run tool to install component   |
+| "Route already exists"                      | Didn't check `pp.listRoutes`        | Run tool to see existing routes |
+| "Prisma client not generated"               | Skipped `pp.prisma.generate`        | Run after schema changes        |
+| Using `bg-white` instead of `bg-background` | Didn't check PHPXUI installation    | Run `pp.config.describe` first  |
+| Inventing component props                   | Didn't check usage tool             | Run `pp.phpxui.component.usage` |
